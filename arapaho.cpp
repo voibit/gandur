@@ -11,6 +11,30 @@
 
 #include "arapaho.hpp"
 
+cv::Mat ArapahoV2::resizeKeepAspectRatio(const cv::Mat &input, const cv::Size &dstSize, const cv::Scalar &bgcolor)
+{
+    cv::Mat output;
+
+    double h1 = dstSize.width * (input.rows/(double)input.cols);
+    double w2 = dstSize.height * (input.cols/(double)input.rows);
+    if( h1 <= dstSize.height) {
+        cv::resize( input, output, cv::Size(dstSize.width, h1));
+        yScale=dstSize.height / h1;
+    } else {
+        cv::resize( input, output, cv::Size(w2, dstSize.height));
+        xScale=dstSize.width / w2;
+    }
+
+    int top = (dstSize.height-output.rows) / 2;
+    int down = (dstSize.height-output.rows+1) / 2;
+    int left = (dstSize.width - output.cols) / 2;
+    int right = (dstSize.width - output.cols+1) / 2;
+
+    cv::copyMakeBorder(output, output, top, down, left, right, cv::BORDER_CONSTANT, bgcolor );
+
+    return output;
+}
+
 ArapahoV2::ArapahoV2()
 {
     boxes = 0;
@@ -165,6 +189,7 @@ bool ArapahoV2::Detect(
     objectCount = 0;
     threshold = thresh;
 
+
     // Early exits
     if (!bSetup)
     {
@@ -242,7 +267,8 @@ bool ArapahoV2::Detect(
             int & objectCount)
 {
     int i, count=0;
-        
+    xScale=1;
+    yScale=1;    
     objectCount = 0;
     threshold = thresh;
     
@@ -265,13 +291,17 @@ bool ArapahoV2::Detect(
     cvtColor(inputMat, inputRgb, CV_BGR2RGB);
     // Convert the bytes to float
     cv::Mat floatMat;
+
+    
+    if (inputRgb.rows != net.h || inputRgb.cols != net.w)
+    { 
+        inputRgb=resizeKeepAspectRatio(inputRgb, cv::Size(net.w, net.h), cv::Scalar(128, 128,128));
+
+    }
+
     inputRgb.convertTo(floatMat, CV_32FC3, 1/255.0);
 
-    if (floatMat.rows != net.h || floatMat.cols != net.w)
-    {
-        DPRINTF("Detect: Resizing image to match network \n");
-        resize(floatMat, floatMat, cv::Size(net.w, net.h));
-    }
+    
     // Get the image to suit darknet
     std::vector<cv::Mat> floatMatChannels(3);
     split(floatMat, floatMatChannels);
@@ -285,7 +315,7 @@ bool ArapahoV2::Detect(
 //
 // Query API to get box coordinates and box labels for objects detected
 //
-bool ArapahoV2::GetBoxes(box* outBoxes, std::string* outLabels, int boxCount)
+bool ArapahoV2::GetBoxes(box* outBoxes, std::string* outLabels,float* outProbs,  int boxCount)
 {
     
     int count = 0;
@@ -304,7 +334,15 @@ bool ArapahoV2::GetBoxes(box* outBoxes, std::string* outLabels, int boxCount)
         {
             outLabels[count] = std::string(classNames[classIndex]);
             outBoxes[count]  = boxes[i];
+            outProbs[count] = prob;
+            
+            //scale box according to resize.
+            outBoxes[count].w*=xScale;
+            outBoxes[count].h*=yScale;
+
+            outBoxes[count].y = outBoxes[count].y  - (yScale-1)*0.048;
             count ++;
+            
         }
     }
     

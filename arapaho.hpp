@@ -27,6 +27,8 @@
 #include "region_layer.h"
 #include "option_list.h"
 
+#include <opencv2/tracking.hpp>
+
 //////////////////////////////////////////////////////////////////////////
 
 #define ARAPAHO_MAX_CLASSES (200)
@@ -65,6 +67,7 @@
         ArapahoV2();
         ~ArapahoV2();
 
+
         bool Setup(ArapahoV2Params & p,
             int & expectedWidth,
             int & expectedHeight);
@@ -81,7 +84,10 @@
             float hier_thresh,
             int & objectCount);
 
-        bool GetBoxes(box* outBoxes, std::string* outLabels, int boxCount);
+        bool GetBoxes(box* outBoxes, std::string* outLabels, float* prob, int boxCount);
+        cv::Mat resizeKeepAspectRatio(const cv::Mat &input, const cv::Size &dstSize, const cv::Scalar &bgcolor);
+
+
     private:
         box     *boxes;
         char    **classNames;
@@ -93,10 +99,37 @@
         int     maxClasses;
         int     threshold;
 
+        float   xScale;
+        float   yScale;
+
         void __Detect(float* inData, float thresh, float hier_thresh, int & objectCount);
     };
 
     //////////////////////////////////////////////////////////////////////////
+
+
+
+inline cv::Ptr<cv::Tracker> createTrackerByName(cv::String name)
+{
+    cv::Ptr<cv::Tracker> tracker;
+
+    if (name == "KCF")
+        tracker = cv::TrackerKCF::create();
+    else if (name == "TLD")
+        tracker = cv::TrackerTLD::create();
+    else if (name == "BOOSTING")
+        tracker = cv::TrackerBoosting::create();
+    else if (name == "MEDIAN_FLOW")
+        tracker = cv::TrackerMedianFlow::create();
+    else if (name == "MIL")
+        tracker = cv::TrackerMIL::create();
+    else if (name == "GOTURN")
+        tracker = cv::TrackerGOTURN::create();
+    else
+        CV_Error(cv::Error::StsBadArg, "Invalid tracking algorithm name\n");
+
+    return tracker;
+}
 
 
 #endif // _ENABLE_ARAPAHO
