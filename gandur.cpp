@@ -86,14 +86,27 @@ void drawBoxes(Mat &image,const std::vector<Rect2d> &obj, const std::vector<std:
         //Draw label
         char prob[5];
         sprintf(prob,"%1.2f",pro[i]);
-        putText(image, lab[i]+" "+prob, obj[i].tl(),
-                FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 0), 2, CV_AA);           
-        putText(image, lab[i], obj[i].tl(),
-                FONT_HERSHEY_COMPLEX_SMALL, 0.9, CV_RGB(100, 200, 255), 1, CV_AA);
+
+        Point bm0=obj[i].tl(); 
+        putText(image, lab[i], bm0, FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
+
+        bm0.x-=2;
+        bm0.y-=1;
+
+        putText(image, lab[i], bm0, FONT_HERSHEY_DUPLEX, 1, CV_RGB(70, 250, 20), 1, CV_AA);   
+
+        bm0.x-=55;
+
+        putText(image, prob, bm0,FONT_HERSHEY_DUPLEX, 0.7,CV_RGB(0, 0, 0),1, CV_AA);
+        
+        bm0.x-=1;
+        bm0.y-=1;
+
+        putText(image, prob, bm0, FONT_HERSHEY_DUPLEX, 0.7,CV_RGB(70, 200, 0),1, CV_AA);
         
         //Draw line from bottom 
         Point bm = Point(obj[i].x+obj[i].width/2, obj[i].y+obj[i].height);
-        Point bm2 = Point(obj[i].x+obj[i].width/2 +5, obj[i].y+obj[i].height+2);
+        Point bm2 = Point(obj[i].x, obj[i].y+obj[i].height+14);
         // Draw sircle and line
         circle(image, bm, 4, cvScalar(50, 255, 200), 2);
         line(image, cvPoint(image.cols/2-1, image.rows), bm,cvScalar(0, 0, 0), 2);
@@ -104,11 +117,14 @@ void drawBoxes(Mat &image,const std::vector<Rect2d> &obj, const std::vector<std:
 
         //Draw bearing from center
         char str[9]; 
-        sprintf(str,"%3.2f*", degrees);
+        sprintf(str,"%3.2f", degrees);
+        bm2.x+=50;
         putText(image, str, bm2,
-                FONT_HERSHEY_COMPLEX_SMALL, 1.5, CV_RGB(0, 0, 0), 2, CV_AA);           
+                FONT_HERSHEY_DUPLEX, 1.3, CV_RGB(0, 0, 0), 2, CV_AA);
+        bm2.x-=2;
+        bm2.y-=1;         
         putText(image, str, bm2,
-                FONT_HERSHEY_COMPLEX_SMALL, 1.6, CV_RGB(100, 200, 255), 1, CV_AA);
+                FONT_HERSHEY_DUPLEX, 1.3, CV_RGB(70, 250, 20), 1, CV_AA);
     }
 }
 
@@ -133,6 +149,7 @@ int main(int argn, char** argv)
         printf("optional arguments\n"); 
         printf(" -stream\tshow or stream result\n");
         printf(" -thresh\tset lower propability limit, defalt: 0.24\n");
+        printf(" -notrack\tDo not track using opencv\n");
         return -1;
     }
 
@@ -140,9 +157,11 @@ int main(int argn, char** argv)
     HttpServer* server;
 
     bool stream = find_arg(argn, argv, (const char*)"-stream");
+    bool notrack = find_arg(argn, argv, (const char*)"-notrack");
     float aov = find_float_arg(argn, argv, "-aov", 60);
     float thresh =find_float_arg(argn, argv, "-thresh", 0.24);
     int fskip = find_int_arg(argn, argv, "-fskip", 1);
+
     unsigned int frame = 0;  
     unsigned int lost = 0;
     
@@ -317,7 +336,7 @@ int main(int argn, char** argv)
                 //check x positions..  
                 //track=checkX(trackers.getObjects(), objects);
                 // || frame%120==0
-                if (!track || numObjects > trackers.boundingBoxes.size()) {
+                if (!track || numObjects > trackers.boundingBoxes.size() || notrack) {
 
                 printf("creating new tracker.. \n");
                    //start tracking

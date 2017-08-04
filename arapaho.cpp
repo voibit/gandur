@@ -340,7 +340,9 @@ bool ArapahoV2::GetBoxes(box* outBoxes, std::string* outLabels,float* outProbs, 
             outBoxes[count].w*=xScale;
             outBoxes[count].h*=yScale;
 
-            outBoxes[count].y = outBoxes[count].y  - (yScale-1)*0.048;
+            //convert x and y from letterbox to actual coordinates
+            outBoxes[count].x = outBoxes[count].x * xScale - (xScale-1)/2;
+            outBoxes[count].y = outBoxes[count].y * yScale - (yScale-1)/2;
             count ++;
             
         }
