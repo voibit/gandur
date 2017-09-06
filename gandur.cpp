@@ -1,461 +1,321 @@
 /*************************************************************************
  * arapaho                                                               *
  *                                                                       *
- * C++ API for Yolo v2                                                   *
- *                                                                       *
- * This test wrapper reads an image or video file and displays           *
- * detected regions in it.                                               *
+ * C++ API for Yolo v2 (Detection)                                       *
  *                                                                       *
  * https://github.com/prabindh/darknet                                   *
  *                                                                       *
  * Forked from, https://github.com/pjreddie/darknet                      *
  *                                                                       *
- * Refer below file for build instructions                               *
- *                                                                       *
- * arapaho_readme.txt                                                    *
- *                                                                       *
  *************************************************************************/
 
-#include "arapaho.hpp"
-#include <string>
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-#include <opencv2/core/utility.hpp>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <chrono>
-#include "Http_server.hpp"
-#include <vector> 
+#include "gandur.hpp"
 
 
-#include <opencv2/tracking.hpp>
+Gandur::Gandur()
+{
+    boxes = 0;
+    probs = 0;
+    classNames = 0;
+    l = {};
+    net = {};
+    nms = 0.4;  //TODO: figure out what this is.... 
+    maxClasses = 0;
+    threshold = 0;
+    setlocale(LC_NUMERIC,"C");
+    Setup();
 
-using namespace cv;
-
-//
-// Some configuration inputs
-//
-static char INPUT_DATA_FILE[]    = "../jk.data"; 
-static char INPUT_CFG_FILE[]     = "jk.cfg";
-#define MAX_OBJECTS_PER_FRAME (100)
-
-#define TARGET_SHOW_FPS (10)
-
-int xPos(const Rect2d &a) {
-    printf("x pos: %f\n", a.x);
-    return (a.x+a.width)/2;
 }
-
-bool checkX(const std::vector<Rect2d> &a,const std::vector<Rect2d> &b) {
-    int margin = 10;
-    bool found = false;
-    for (int ia = 0; ia < a.size();ia++)
+    
+Gandur::~Gandur()
+{
+    // TODO - Massive cleanup here
+    
+    if(boxes) 
+        free(boxes);
+    if(probs)
+        free_ptrs((void **)probs, l.w*l.h*l.n);
+    if(classNames)
     {
-        found = false;
-        for (int ib = 0; ib < b.size(); ib++)
-        {
-
-
-            if (xPos(a[ia]) < xPos(b[ib]) + margin && xPos(a[ia]) > xPos(b[ib]) - margin) {
-                found = true;
-                break;
-            } 
-        }
-        
-        if (!found) return false;
+        //todo
     }
-    return found;
-     /* std::cout << value; ... */
+    boxes = 0;
+    probs = 0;
+    classNames = 0;
+}
+
+    
+bool Gandur::Setup()
+{
+
+    list *options = read_data_cfg(CONFIG);
+    char *nameListFile = option_find_str(options, (char*)"names", (char*)"data/names.list");
+    char *networkFile = option_find_str(options, (char*)"networkcfg", (char*)"data/sea.cfg");
+    char *weightsFile = option_find_str(options, (char*)"weights", (char*)"data/sea.weights");
+    int maxClasses = option_find_int(options, (char*)"classes",6);
+
+    if(!nameListFile){
+        DPRINTF("No valid nameList file specified in options file [%s]!\n", CONFIG);
+        return false;
+    }
+
+    classNames = get_labels(nameListFile);
+
+    if(!classNames){
+        DPRINTF("No valid class names specified in nameList file [%s]!\n", nameListFile);
+        return false;
+    }
+
+    int j;
+    // Early exits
+    if(!networkFile) {
+        EPRINTF("No cfg file specified!\n");
+        return false;
+    }
+    if(!weightsFile) {
+        EPRINTF("No weights file specified!\n");
+        return false;
+    }    
+
+    // Print some debug info
+    net = parse_network_cfg(networkFile);
+
+    DPRINTF("Setup: net.n = %d\n", net.n);   
+    DPRINTF("net.layers[0].batch = %d\n", net.layers[0].batch);
+    
+    load_weights(&net, weightsFile);
+    set_batch_network(&net, 1);     
+    l = net.layers[net.n-1];
+    DPRINTF("Setup: layers = %d, %d, %d\n", l.w, l.h, l.n);
+
+    // Class limiter
+    if(l.classes > maxClasses)
+    {
+        EPRINTF("Warning: Read classes from cfg (%d) > maxClasses (%d)\n", l.classes, maxClasses);
+    }    
+
+    DPRINTF("Image expected w,h = [%d][%d]!\n", net.w, net.h);            
+    
+    boxes = (box*)calloc(l.w*l.h*l.n, sizeof(box));
+    probs = (float**)calloc(l.w*l.h*l.n, sizeof(float *));
+    
+    // Error exits
+    if(!boxes || !probs)
+    {
+        EPRINTF("Error allocating boxes/probs, %p/%p !\n", boxes, probs);
+        goto clean_exit;
+    }
+
+    for(j = 0; j < l.w*l.h*l.n; ++j) 
+    {
+        probs[j] = (float*)calloc(l.classes + 1, sizeof(float));
+        if(!probs[j])
+        {
+            EPRINTF("Error allocating probs[%d]!\n", j);            
+            goto clean_exit;
+        }
+    }
+    DPRINTF("Setup: Done\n");
+    return true;
+    
+clean_exit:        
+    if(boxes) 
+        free(boxes);
+    if(probs)
+        free_ptrs((void **)probs, l.w*l.h*l.n);
+    boxes = NULL;
+    probs = NULL;
+    return false;
 }
 
 
-void drawBoxes(Mat &image,const std::vector<Rect2d> &obj, const std::vector<std::string> &lab, const std::vector<float> &pro, float aov) {
+//
+// Detect API to get objects detected
+// \warning Takes in OpenCV Mat image structure as argument
+// \warning Setup must have been done on the object before
+//
+bool Gandur::Detect(
+            const cv::Mat &inputMat,
+            float thresh, 
+            float hier_thresh)
+{
 
-    for(unsigned int i=0;i<obj.size();i++) {
+    image = inputMat;
+    int i, count=0;
+    xScale=1;
+    yScale=1;    
+    threshold = thresh;
 
-        printf("drawing boxes.. %f x:%f y:%f w:%f h:%f \n", i, obj[i].x, obj[i].y, obj[i].width, obj[i].height);
-        
+    detections.clear();
+
+    if(inputMat.empty())
+    {
+        EPRINTF("Error in inputImage! [bgr = %d, w = %d, h = %d]\n",
+                    !inputMat.data, inputMat.cols != net.w,
+                    inputMat.rows != net.h);
+        return false;
+    }
+
+    //Convert to rgb
+    cv::Mat inputRgb;
+    cvtColor(inputMat, inputRgb, CV_BGR2RGB);
+    // Convert the bytes to float
+    cv::Mat floatMat;
+
+    if (inputRgb.rows != net.h || inputRgb.cols != net.w) { 
+        inputRgb=resizeKeepAspectRatio(inputRgb, cv::Size(net.w, net.h), cv::Scalar(128, 128,128));
+    }
+
+    inputRgb.convertTo(floatMat, CV_32FC3, 1/255.0);
+
+    // Get the image to suit darknet
+    std::vector<cv::Mat> floatMatChannels(3);
+    split(floatMat, floatMatChannels);
+    vconcat(floatMatChannels, floatMat);
+
+    __Detect((float*)floatMat.data, thresh, hier_thresh);
+
+    return true;
+}
+    
+//
+// Query API to get box coordinates and box labels for objects detected
+//
+cv::Mat Gandur::resizeKeepAspectRatio(const cv::Mat &input, const cv::Size &dstSize, const cv::Scalar &bgcolor)
+{
+    cv::Mat output;
+
+    double h1 = dstSize.width * (input.rows/(double)input.cols);
+    double w2 = dstSize.height * (input.cols/(double)input.rows);
+    if( h1 <= dstSize.height) {
+        cv::resize( input, output, cv::Size(dstSize.width, h1));
+        yScale=dstSize.height / h1;
+    } else {
+        cv::resize( input, output, cv::Size(w2, dstSize.height));
+        xScale=dstSize.width / w2;
+    }
+
+    int top = (dstSize.height-output.rows) / 2;
+    int down = (dstSize.height-output.rows+1) / 2;
+    int left = (dstSize.width - output.cols) / 2;
+    int right = (dstSize.width - output.cols+1) / 2;
+
+    cv::copyMakeBorder(output, output, top, down, left, right, cv::BORDER_CONSTANT, bgcolor );
+
+    return output;
+}
+
+cv::Mat Gandur::drawDetections() {
+    using namespace cv; 
+
+    cv::Mat img = image.clone(); 
+
+    for(Detection det : detections) {
+        /*
         //Calculate degrees.
         float dpp = aov / sqrt(image.cols*image.cols + image.rows* image.rows) ;
-        float degrees = obj[i].x+obj[i].width/2-image.cols/2;
+        float degrees = o.rects[i].x+o.rects[i].width/2-image.cols/2;
         degrees *= dpp;
+        */
+
         //DPRINTF("Label:%s prob: %00f \n\n", labels[objId].c_str(),probs[objId]);
         
         //Draw label
         char prob[5];
-        sprintf(prob,"%1.2f",pro[i]);
+        sprintf(prob,"%1.2f",det.prob);
 
-        Point bm0=obj[i].tl(); 
-        putText(image, lab[i], bm0, FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
+        Point posLabel=det.box.tl();  //top left
 
-        bm0.x-=2;
-        bm0.y-=1;
+        putText(img, det.label, posLabel, FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
 
-        putText(image, lab[i], bm0, FONT_HERSHEY_DUPLEX, 1, CV_RGB(70, 250, 20), 1, CV_AA);   
+        posLabel.x-=2;
+        posLabel.y-=1;
 
-        bm0.x-=55;
+        putText(img, det.label, posLabel, FONT_HERSHEY_DUPLEX, 1, CV_RGB(70, 250, 20), 1, CV_AA);   
 
-        putText(image, prob, bm0,FONT_HERSHEY_DUPLEX, 0.7,CV_RGB(0, 0, 0),1, CV_AA);
+        posLabel.x-=55;
+
+        putText(img, prob, posLabel,FONT_HERSHEY_DUPLEX, 0.7,CV_RGB(0, 0, 0),1, CV_AA);
         
-        bm0.x-=1;
-        bm0.y-=1;
+        posLabel.x-=1;
+        posLabel.y-=1;
 
-        putText(image, prob, bm0, FONT_HERSHEY_DUPLEX, 0.7,CV_RGB(70, 200, 0),1, CV_AA);
+        putText(img, prob, posLabel, FONT_HERSHEY_DUPLEX, 0.7,CV_RGB(70, 200, 0),1, CV_AA);
         
         //Draw line from bottom 
-        Point bm = Point(obj[i].x+obj[i].width/2, obj[i].y+obj[i].height);
-        Point bm2 = Point(obj[i].x, obj[i].y+obj[i].height+14);
+        Point posCircle = Point(det.box.x+det.box.width/2, det.box.y+det.box.height);
+        Point posDegree = Point(det.box.x, det.box.y+det.box.height+14);
+        
         // Draw sircle and line
-        circle(image, bm, 4, cvScalar(50, 255, 200), 2);
-        line(image, cvPoint(image.cols/2-1, image.rows), bm,cvScalar(0, 0, 0), 2);
-        line(image, cvPoint(image.cols/2+1, image.rows), bm, CV_RGB(100, 200, 255), 1);
-
+        circle(img, posCircle, 4, cvScalar(50, 255, 200), 2);
+        line(img, cvPoint(img.cols/2-1, img.rows), posCircle,cvScalar(0, 0, 0), 2);
+        line(img, cvPoint(img.cols/2+1, img.rows),posCircle, CV_RGB(100, 200, 255), 1);
         // Show image and overlay using OpenCV
-        //rectangle(image, obj[i].tl(), obj[i].br(),CV_RGB(100, 200, 255), 1, 8, 0);
+        
+        rectangle(img, det.box,CV_RGB(100, 200, 255), 1, 8, 0);
 
+        /*
         //Draw bearing from center
         char str[9]; 
         sprintf(str,"%3.2f", degrees);
-        bm2.x+=50;
-        putText(image, str, bm2,
+
+        posDegree.x+=50;
+        putText(img, str, posDegree,
                 FONT_HERSHEY_DUPLEX, 1.3, CV_RGB(0, 0, 0), 2, CV_AA);
-        bm2.x-=2;
-        bm2.y-=1;         
-        putText(image, str, bm2,
+        posDegree.x-=2;
+        posDegree.y-=1;         
+        putText(img, str, posDegree,
                 FONT_HERSHEY_DUPLEX, 1.3, CV_RGB(70, 250, 20), 1, CV_AA);
+        */
     }
+    return img;
 }
 
-//
-// Some utility functions
-// 
-bool fileExists(const char *file) 
+//////////////////////////////////////////////////////////////////
+/// Private APIs
+//////////////////////////////////////////////////////////////////
+void Gandur::__Detect(float* inData, float thresh, float hier_thresh)
 {
-    struct stat st;
-    if(!file) return false;
-    int result = stat(file, &st);
-    return (0 == result);
-}
+    int i;
+    // Predict
+    network_predict(net, inData);
+    get_region_boxes(l, 1, 1,net.w, net.h, thresh, probs, boxes, 0, 0, hier_thresh,0);
 
-//
-// Main test wrapper for arapaho
-//
-int main(int argn, char** argv)
-{
-    if (argn < 3) {
-        printf("gandur weightsfile avfile [args]\n\n");
-        printf("optional arguments\n"); 
-        printf(" -stream\tshow or stream result\n");
-        printf(" -thresh\tset lower propability limit, defalt: 0.24\n");
-        printf(" -notrack\tDo not track using opencv\n");
-        return -1;
-    }
-
-    //Server pointer;
-    HttpServer* server;
-
-    bool stream = find_arg(argn, argv, (const char*)"-stream");
-    bool notrack = find_arg(argn, argv, (const char*)"-notrack");
-    float aov = find_float_arg(argn, argv, "-aov", 60);
-    float thresh =find_float_arg(argn, argv, "-thresh", 0.24);
-    int fskip = find_int_arg(argn, argv, "-fskip", 1);
-
-    unsigned int frame = 0;  
-    unsigned int lost = 0;
-    
-    //trackingobject
-    std::vector<cv::Rect2d> objects;
-    std::vector<std::string> label;
-    std::vector<float> prob; 
-    bool track = false;
-    bool isfound;
-    MultiTrackerTLD trackers;
-
-
-    //Stream or show output image. 
-    if (stream) {
-        printf("Setting up streamingserver.. \n");
-        
-        server = new HttpServer();
-        server->is_debug = false;
-        server->run(8080);
-    }
-    else {
-        namedWindow ( "Gandur" , CV_WINDOW_AUTOSIZE );
-    }
-
-
-
-    bool ret = false;
-    int expectedW = 0, expectedH = 0;
-    box* boxes = 0;
-    std::string* labels;
-    float* probs = 0;
-    
-    // Early exits
-    if(!fileExists(INPUT_DATA_FILE) || !fileExists(INPUT_CFG_FILE) || !fileExists(argv[1])  )
+    DPRINTF("l.softmax_tree = %p, nms = %f\n", l.softmax_tree, nms);
+    if (l.softmax_tree && nms)
     {
-        EPRINTF("Setup failed as input files do not exist or not readable!\n");
-        return -1;       
+        do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
     }
-    
-    // Create arapaho
-    ArapahoV2* p = new ArapahoV2 
-    ();
-    if(!p)
-    {
-        return -1;
-    }
-    
-    // TODO - read from arapaho.cfg    
-    ArapahoV2Params ap;
-    ap.datacfg = INPUT_DATA_FILE;
-    ap.cfgfile = INPUT_CFG_FILE;
-    ap.weightfile = argv[1];
-    ap.nms = 0.4;
-    ap.maxClasses = 4;
-    
-    // Always setup before detect
-    ret = p->Setup(ap, expectedW, expectedH); //setup gives network width and height 
-    if(false == ret)
-    {
-        EPRINTF("Setup failed!\n");
-        if(p) delete p;
-        p = 0;
-        return -1;
-    }
+    else if (nms)
+        do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
 
-    // Setup image buffer here
-    Mat image;
+    // Update object counts
+    for (i = 0; i < (l.w*l.h*l.n); ++i){
 
-    // open a video or image file
-    VideoCapture cap ( argv[2] );
-    if( ! cap.isOpened () )  
-    {
-        EPRINTF("Could not load the AV file %s\n", argv[2]);
-        if(p) delete p;
-        p = 0;
-        return -1;
-    }
-    // Detection loop
-    while(1)
-    {
-        bool success = cap.read(image);
+        int class1 = max_index(probs[i], l.classes);
+        float prob = probs[i][class1];
 
-        if(!success)
-        {
-            EPRINTF("cap.read failed/EoF - AV file %s\n", argv[2]);
-            if(p) delete p;
-            p = 0;
-            break;
-        }    
-        if( image.empty() ) 
-        {
-            EPRINTF("image.empty error - AV file %s\n", argv[2]);
-            if(p) delete p;
-            p = 0;
-            break;
+        if (prob > thresh){
+
+            DPRINTF("\nX:%f, Y:%f xscale:%f, yscale%f\n",boxes[i].x, boxes[i].y,xScale, yScale);
+            Detection tmp;
+
+            tmp.label= std::string(classNames[class1]);
+            tmp.prob=prob;
+
+            tmp.box.width=(double)image.cols* boxes[i].w*xScale;
+            tmp.box.height=(double)image.rows* boxes[i].h*yScale;
+
+            //convert x and y from letterbox to actual coordinates
+            tmp.box.x =image.cols* (boxes[i].x * xScale - ((xScale-1)/2.)) -tmp.box.width/2;
+            tmp.box.y =image.rows* (boxes[i].y * yScale - ((yScale-1)/2.)) - tmp.box.height/2;
+
+
+
+            DPRINTF("Object:%s w:%ipx h%ipx \n w:%f h:%f x:%f y:%f", tmp.label.c_str(), image.cols, image.rows, boxes[i].w, boxes[i].h,boxes[i].x, boxes[i].y);
+            DPRINTF("\n w:%i h:%i x:%i y:%i\n", tmp.box.width, tmp.box.height, tmp.box.x, tmp.box.y);
+            detections.push_back(tmp);
         }
-        else
-        {
+    }
 
-            // MAIN STUFF! ********************************************************************************
-            //*********************************************************************************************
-
-            //Resize image if it is too lagre to view. (will be resized further on to fit network)
-            if (image.size().width > 1280) {
-
-                resize(image, image, Size(1280, image.size().height*((double)1280/image.size().width))); 
-            } 
-
-            DPRINTF("Image data = %p, w = %d, h = %d\naov= %00f", image.data, image.cols, image.rows, aov);
-            
-            // Remember the time
-            auto detectionStartTime = std::chrono::system_clock::now();
-            
-            int numObjects = 0;
-
-            // Detect the objects in the image //-thresh and 
-            p->Detect(image,thresh,0.5,numObjects);
-
-            std::chrono::duration<double> detectionTime = (std::chrono::system_clock::now() - detectionStartTime);
-        
-            printf("==> Detected [%d] objects in [%f] seconds\n", numObjects, detectionTime.count());
-            
-            // Track objects using darknet, and pass to opencv
-            if(numObjects > 0 && numObjects < MAX_OBJECTS_PER_FRAME) // Realistic maximum
-            {    
-                boxes = new box[numObjects];
-                probs = new float[numObjects];
-                labels = new std::string[numObjects];
-                if(!boxes)
-                {
-                    if(p) delete p;
-                    p = 0;
-                    return -1;
-                }
-                if(!labels)
-                {
-                    if(p) delete p;
-                    p = 0;
-                    if(boxes)
-                    {
-                        delete[] boxes;
-                        boxes = NULL;                        
-                    }
-                    return -1;
-                }
-                
-                // Get boxes and labels
-                p->GetBoxes(boxes,labels,probs,numObjects);
-                
-                int objId = 0;
-                int leftTopX = 0, leftTopY = 0, rightBotX = 0,rightBotY = 0;
-
-                //reset tracking
-                objects.clear();
-     
-                for (objId = 0; objId < numObjects; objId++)
-                {
-
-                    leftTopX = 1 + image.cols*(boxes[objId].x - boxes[objId].w / 2);
-                    leftTopY = 1 + image.rows*(boxes[objId].y - boxes[objId].h / 2);
-                    rightBotX = 1 + image.cols*(boxes[objId].x + boxes[objId].w / 2);
-                    rightBotY = 1 + image.rows*(boxes[objId].y + boxes[objId].h / 2);
-                    DPRINTF("Box #%d: center {x,y}, box {w,h} = [%f, %f, %f, %f]\n", 
-                            objId, boxes[objId].x, boxes[objId].y, boxes[objId].w, boxes[objId].h);
-
-                    //filling vectors.. 
-                    objects.push_back(Rect2d(Point(leftTopX,leftTopY),Point(rightBotX,rightBotY)));
-    
-                   
-                } // loop every objects
-
-                //check x positions..  
-                //track=checkX(trackers.getObjects(), objects);
-                // || frame%120==0
-                if (!track || numObjects > trackers.boundingBoxes.size() || notrack) {
-
-                printf("creating new tracker.. \n");
-                   //start tracking
-                    //trackers.clear();
-                    prob.clear();
-                    label.clear();
-
-                    MultiTrackerTLD trackerNew;
-                    trackers = trackerNew;
-
-                    label.assign(labels, labels+numObjects);
-                    prob.assign(probs, probs+numObjects);
-
-                    printf("Start the tracking process\n");
-                    for (auto obj:objects)
-                    {
-                        trackers.addTarget(image,obj,createTrackerByName("MEDIAN_FLOW"));
-                    
-                    }
-                    track=true;
-                }
-
-
-                if (boxes)
-                {
-                    delete[] boxes;
-                    boxes = NULL;
-                }
-                if (labels)
-                {
-                    delete[] labels;
-                    labels = NULL;
-                }
-                if (probs)
-                {
-                    delete[] probs;
-                    probs = NULL;
-                }   
-                
-            }// If objects were detected
-
-
-            // Track objects using opencv
-            drawBoxes(image, trackers.boundingBoxes, label, prob,aov);
-            isfound = trackers.update(image);
-            if(!isfound)
-            {
-
-                printf("The targets has been lost...\n");
-                track=false;
-                lost++; 
-            }
-
-
-
-            if (stream) {
-                if (frame%fskip == 0) server->IMSHOW("im", image);
-            }
-            else {
-               imshow("Gandur", image); 
-            }
-            
-
-            char k = waitKey(20);
-
-            if (k=='m') {
-
-                //trackers.clear();
-                //need to clear this.
-
-                MultiTrackerTLD trackerNew;
-                trackers = trackerNew;
-
-                objects.push_back(selectROI("Gandur",image));
-                label.push_back("new");
-                prob.push_back(0);
-
-
-                printf("Start the tracking process\n");
-                for (auto obj:objects)
-                {
-                    trackers.addTarget(image,obj,createTrackerByName("MEDIAN_FLOW"));    /* code */
-                }
-                    /* code */
-                //trackers.addTarget(image,objects,createTrackerByName("MEDIAN_FLOW"));
-                lost=0;
-                track=true;
-
-            }
-            else if (k=='r' || lost > 5) {
-                    printf("resetting..\n");
-
-                    //trackers.clear();
-                    objects.clear();
-                    prob.clear();
-                    label.clear();
-
-                    MultiTrackerTLD trackerNew;
-                    trackers = trackerNew;
-                    track=false;
-                    lost=0;
-            }
-            else if(k==27) break;
-            frame++;
-
-
-
-
-         
-        } //If a frame was read
-    //quit on ESC button
-
-    }// Detection loop
-    
-clean_exit:    
-
-    // Clear up things before exiting
-    if(p) delete p;
-    delete server;
-    DPRINTF("Exiting...\n");
-    return 0;
-}       
+}
