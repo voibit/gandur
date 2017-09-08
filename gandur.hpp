@@ -62,6 +62,8 @@ public:
 
     std::vector<Detection> detections;
 
+    int getLabelId(const std::string &name);
+
 private:
     cv::Mat image; 
     box     *boxes;

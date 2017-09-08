@@ -175,6 +175,18 @@ bool Gandur::Detect(
 
     return true;
 }
+
+int Gandur::getLabelId(const std::string &name) {
+    
+    size_t size = sizeof(*classNames);
+    DPRINTF("labelsize: %i", size);
+
+    for (size_t i = 0; i < size; i++) {
+        if (std::string(classNames[i]) == name) return i;         
+    }
+    return -1; 
+
+} 
     
 //
 // Query API to get box coordinates and box labels for objects detected
