@@ -6,6 +6,8 @@ gandur: clean
 	g++ main.cpp gandur.cpp -DGPU -DCUDNN -I../darknet/include/ -I../darknet/src/ -I/opt/cuda/include/ -L./ -ldarknet-cpp-shared -L/usr/local/lib `pkg-config --libs opencv` -L/opt/cuda/lib64 -lcuda -lcudart -lcublas -lcurand -lboost_system -lboost_thread -o gandur
 gandur-debug: clean
 	g++ main.cpp gandur.cpp -DGPU -D_DEBUG -DCUDNN -I../darknet/include -I../darknet/src/ -I/opt/cuda/include/ -L./ -ldarknet-cpp-shared -L/usr/local/lib `pkg-config --libs opencv` -L/opt/cuda/lib64 -lcuda -lcudart -lcublas -lcurand -lboost_system -lboost_thread -o gandur
+gandur-imgdet: clean-img
+	g++ imgdet.cpp gandur.cpp -DGPU -D_DEBUG -DCUDNN -I../darknet/include -I../darknet/src/ -I/opt/cuda/include/ -L./ -ldarknet-cpp-shared -L/usr/local/lib `pkg-config --libs opencv` -L/opt/cuda/lib64 -lcuda -lcudart -lcublas -lcurand -lboost_system -lboost_thread -o gandurimg
 
 
 gandur-nogpu: clean
@@ -15,4 +17,9 @@ gandur-nogpu: clean
 clean:
 
 	rm -rf ./gandur
+
+clean-img:
+
+	rm -rf ./gandur
+
 

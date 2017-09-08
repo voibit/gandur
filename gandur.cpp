@@ -1,11 +1,9 @@
 /*************************************************************************
- * arapaho                                                               *
+ * Gandur                                                                *
  *                                                                       *
  * C++ API for Yolo v2 (Detection)                                       *
- *                                                                       *
- * https://github.com/prabindh/darknet                                   *
- *                                                                       *
- * Forked from, https://github.com/pjreddie/darknet                      *
+ *                                                                       *                                                                      *
+ * Forked from, https://github.com/prabindh/darknet                      *
  *                                                                       *
  *************************************************************************/
 
@@ -279,7 +277,7 @@ void Gandur::__Detect(float* inData, float thresh, float hier_thresh)
     int i;
     // Predict
     network_predict(net, inData);
-    get_region_boxes(l, 1, 1,net.w, net.h, thresh, probs, boxes, 0, 0, hier_thresh,0);
+    get_region_boxes(l, 1, 1,net.w, net.h, thresh, probs, boxes, 0, 0, hier_thresh,1);
 
     DPRINTF("l.softmax_tree = %p, nms = %f\n", l.softmax_tree, nms);
     if (l.softmax_tree && nms)

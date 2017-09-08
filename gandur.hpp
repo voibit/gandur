@@ -1,11 +1,9 @@
 /*************************************************************************
- * arapaho                                                               *
+ * Gandur                                                                *
  *                                                                       *
  * C++ API for Yolo v2 (Detection)                                       *
- *                                                                       *
- * https://github.com/prabindh/darknet                                   *
- *                                                                       *
- * Forked from, https://github.com/pjreddie/darknet                      *
+ *                                                                       *                                                                      *
+ * Forked from, https://github.com/prabindh/darknet                      *
  *                                                                       *
  *************************************************************************/
 
@@ -28,11 +26,6 @@
 #include "region_layer.h"
 #include "option_list.h"
 
-//////////////////////////////////////////////////////////////////////////
-
-#define ARAPAHO_MAX_CLASSES (200)
-
-
 #ifdef _DEBUG
 #define DPRINTF printf
 #define EPRINTF printf
@@ -42,57 +35,48 @@
 #endif
 
 static char CONFIG[]    = "gandur.conf"; 
-    //////////////////////////////////////////////////////////////////////////
 
-    struct Detection {
-        std::string label;
-        float prob;
-        cv::Rect box;
-    };
+struct Detection {
+    std::string label;
+    float prob;
+    cv::Rect box;
+};
 
-    //////////////////////////////////////////////////////////////////////////
+class Gandur
+{
+public:
+    Gandur();
+    ~Gandur();
+    bool Setup();
+    bool Detect(
+        const cv::Mat & inputMat,
+        float thresh,
+        float hier_thresh);
 
-    class Gandur
-    {
-    public:
-        Gandur();
-        ~Gandur();
-        bool Setup();
-        bool Detect(
-            const cv::Mat & inputMat,
-            float thresh,
-            float hier_thresh);
+    cv::Mat drawDetections();
 
+    cv::Mat resizeKeepAspectRatio(
+        const cv::Mat &input,
+        const cv::Size &dstSize,
+        const cv::Scalar &bgcolor);
 
-        cv::Mat drawDetections();
+    std::vector<Detection> detections;
 
-        cv::Mat resizeKeepAspectRatio(
-            const cv::Mat &input,
-            const cv::Size &dstSize,
-            const cv::Scalar &bgcolor);
+private:
+    cv::Mat image; 
+    box     *boxes;
+    char    **classNames;
+    float   **probs;
+    network net;
+    layer   l;
+    float   nms;
+    int     maxClasses;
+    int     threshold;
 
-        std::vector<Detection> detections;
+    float   xScale;
+    float   yScale;
 
-    private:
-        cv::Mat image; 
-        box     *boxes;
-        char    **classNames;
-        float   **probs;
-        network net;
-        layer   l;
-        float   nms;
-        int     maxClasses;
-        int     threshold;
-
-        float   xScale;
-        float   yScale;
-
-        void __Detect(float* inData, float thresh, float hier_thresh);
-    };
-
-    //////////////////////////////////////////////////////////////////////////
-
-
-
+    void __Detect(float* inData, float thresh, float hier_thresh);
+};
 
 #endif // _ENABLE_GANDUR
