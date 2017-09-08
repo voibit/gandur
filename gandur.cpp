@@ -9,7 +9,6 @@
 
 #include "gandur.hpp"
 
-
 Gandur::Gandur()
 {
     boxes = 0;
@@ -126,12 +125,6 @@ clean_exit:
     return false;
 }
 
-
-//
-// Detect API to get objects detected
-// \warning Takes in OpenCV Mat image structure as argument
-// \warning Setup must have been done on the object before
-//
 bool Gandur::Detect(
             const cv::Mat &inputMat,
             float thresh, 
@@ -149,8 +142,8 @@ bool Gandur::Detect(
     if(inputMat.empty())
     {
         EPRINTF("Error in inputImage! [bgr = %d, w = %d, h = %d]\n",
-                    !inputMat.data, inputMat.cols != net.w,
-                    inputMat.rows != net.h);
+            !inputMat.data, inputMat.cols != net.w,
+            inputMat.rows != net.h);
         return false;
     }
 
@@ -188,9 +181,6 @@ int Gandur::getLabelId(const std::string &name) {
 
 } 
     
-//
-// Query API to get box coordinates and box labels for objects detected
-//
 cv::Mat Gandur::resizeKeepAspectRatio(const cv::Mat &input, const cv::Size &dstSize, const cv::Scalar &bgcolor)
 {
     cv::Mat output;
@@ -319,8 +309,6 @@ void Gandur::__Detect(float* inData, float thresh, float hier_thresh)
             //convert x and y from letterbox to actual coordinates
             tmp.box.x =image.cols* (boxes[i].x * xScale - ((xScale-1)/2.)) -tmp.box.width/2;
             tmp.box.y =image.rows* (boxes[i].y * yScale - ((yScale-1)/2.)) - tmp.box.height/2;
-
-
 
             DPRINTF("Object:%s w:%ipx h%ipx \n w:%f h:%f x:%f y:%f", tmp.label.c_str(), image.cols, image.rows, boxes[i].w, boxes[i].h,boxes[i].x, boxes[i].y);
             DPRINTF("\n w:%i h:%i x:%i y:%i\n", tmp.box.width, tmp.box.height, tmp.box.x, tmp.box.y);

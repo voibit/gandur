@@ -1,24 +1,12 @@
 #include "gandur.hpp"
-#include <string>
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-#include <opencv2/core/utility.hpp>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <chrono>
-#include <vector> 
 
 #include <fstream>
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
+
 using namespace cv;
 using namespace boost::filesystem;
-
-
-
 
 int main(int argc, char** argv) {
 
@@ -27,8 +15,6 @@ int main(int argc, char** argv) {
     if (!is_directory(p / "ok")) create_directory(p / "ok");
     if (!is_directory(p / "tja")) create_directory(p / "tja");
     if (!is_directory(p / "nope")) create_directory(p / "nope");
-
-
 
     Gandur *net = new Gandur();
     Mat image; 
@@ -45,7 +31,6 @@ int main(int argc, char** argv) {
             image = imread( imgPath.string() );
             net->Detect(image,0.6, 0.5);
 
-
             imshow("Gandur",net->drawDetections());
 
             char k = waitKey(0);
@@ -61,23 +46,20 @@ int main(int argc, char** argv) {
 
                 for (auto det : net->detections) {
 
-                    file << net->getLabelId(det.label);
-
                     w = det.box.width / float(image.cols);
                     h = det.box.height / float(image.rows);
                     x = (det.box.x + det.box.width/2) / float(image.cols);
                     y = (det.box.y + det.box.height/2) / float(image.rows);
-
+                    
+                    file << net->getLabelId(det.label);
                     file << " " << x << " " << y << " " << w << " " << h << std::endl;
 
                 }
                 file.close();
-            
-
             }
+
             else if(k=='f') {
                 std::cout << "NESTEN!! \n";
-
             }
             else {
                 std::cout << "NONO!!\n";
@@ -87,9 +69,5 @@ int main(int argc, char** argv) {
     if(net) delete net;
     net = 0;
 
-
-
-
 	return 0;
-}   
-
+}
