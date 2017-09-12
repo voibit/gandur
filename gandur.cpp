@@ -172,7 +172,6 @@ bool Gandur::Detect(
 int Gandur::getLabelId(const std::string &name) {
     
     size_t size = sizeof(*classNames);
-    DPRINTF("labelsize: %i", size);
 
     for (size_t i = 0; i < size; i++) {
         if (std::string(classNames[i]) == name) return i;         
