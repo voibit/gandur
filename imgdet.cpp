@@ -14,6 +14,8 @@ int main(int argc, char** argv) {
     if (!is_directory(p / "tja")) create_directory(p / "tja");
     if (!is_directory(p / "nope")) create_directory(p / "nope");
 
+    p = canonical(p);
+
     Gandur *net = new Gandur();
     Mat image; 
 
@@ -21,13 +23,10 @@ int main(int argc, char** argv) {
         
         if (extension(entry)==".jpg" || extension(entry)==".png") {
 
-            path newPath = canonical(entry);
+            path imgName=entry.path().filename();
 
-            std::cout << std::endl << newPath << std::endl << "[enter]=yes, [tab]=maybe, [any]=no :\n"; 
-            image = imread( newPath.string() );
-
-            path filename = newPath.filename();
-            newPath = newPath.parent_path();
+            std::cout << std::endl << p/imgName << std::endl << "[enter]=yes, [tab]=maybe, [any]=no :\n"; 
+            image = imread( (p/imgName).string() );
              
             net->Detect(image,0.6, 0.5);
 
@@ -40,16 +39,16 @@ int main(int argc, char** argv) {
 
                 if (k==char(10)) {
                     std::cout << "YEAAAH!";
-                    newPath/="ok";
+                    p/="ok";
                 }
                 else {
                     std::cout << "Tja!";
-                    newPath/="tja";
+                    p/="tja";
                 }
-                newPath/=filename;                 
-                copy_file(entry,  newPath, copy_option::overwrite_if_exists);
-                
-                fstream file(newPath.replace_extension(".txt"), std::ios::out);
+                p/=imgName;
+
+                copy_file(entry, p, copy_option::overwrite_if_exists);
+                fstream file(p.replace_extension(".txt"), std::ios::out);
 
                 float x,y, w, h;
 
@@ -65,16 +64,25 @@ int main(int argc, char** argv) {
                 }
                 file.close();
             }
-
+            else if (k=='d') {
+                std::cout << "Are you shure you want to delete: " << imgName << "? (y/N)";  
+                char l = waitKey(0); 
+                if (l=='y') {
+                    remove(p/imgName);
+                    std::cout << imgName <<" deleted.."; 
+                } 
+            }
+            else if (k=='s') {
+                std::cout << "skipping " << imgName << "..";  
+            }
             else {
                 std::cout << "NONO!!";
-                copy_file(entry, newPath/"nope"/filename, copy_option::overwrite_if_exists);
+                copy_file(entry, p/"nope"/imgName, copy_option::overwrite_if_exists);
             }
             std::cout << std::endl;
         }
     }
-    if(net) delete net;
+    delete net;
     net = 0;
-
 	return 0;
 }
