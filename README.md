@@ -2,11 +2,28 @@
 # Gandur
 
 C++ wrapper class for darknet.
-based upon prabindhs "arapaho". [https://github.com/prabindh/darknet]
+based upon prabindhs "arapaho" [https://github.com/prabindh/darknet].
+
+**Build instructions**
+
+Tested with  
+* opencv 3.3
+* boost 1.65
+* cuda 9
+* cudnn 7  
+
+```bash
+make videt
+make imgdet
+make gandur
+```
 
 **Useage**
 
 ```c++
+#include 'gandur.hpp'
+
+
 Gandur *net= new Gandur();  
 net->Detect(Mat,thersh);  
 Mat detimg= drawDetections();  
