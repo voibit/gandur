@@ -125,10 +125,11 @@ clean_exit:
     return false;
 }
 
+
 bool Gandur::Detect(
             const cv::Mat &inputMat,
             float thresh, 
-            float hier_thresh)
+            float hier_thresh=0.5)
 {
 
     image = inputMat;

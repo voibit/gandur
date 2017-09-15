@@ -14,19 +14,19 @@ int main(int argc, char** argv) {
     if (!is_directory(p / "tja")) create_directory(p / "tja");
     if (!is_directory(p / "nope")) create_directory(p / "nope");
 
-    p = canonical(p);
-
     Gandur *net = new Gandur();
     Mat image; 
 
     for(auto& entry : directory_iterator(p)) {
-        
+        path newPath = canonical(p);
         if (extension(entry)==".jpg" || extension(entry)==".png") {
 
             path imgName=entry.path().filename();
 
-            std::cout << std::endl << p/imgName << std::endl << "[enter]=yes, [tab]=maybe, [any]=no :\n"; 
-            image = imread( (p/imgName).string() );
+            std::cout << std::endl << newPath/imgName << std::endl;
+            std::cout << "[enter]=yes, [tab]=maybe, [s]=skip, [d]=delete, rest=no\n";
+            std::cout << newPath/imgName << std::endl;  
+            image = imread( (newPath/imgName).string() );
              
             net->Detect(image,0.6, 0.5);
 
@@ -39,16 +39,16 @@ int main(int argc, char** argv) {
 
                 if (k==char(10)) {
                     std::cout << "YEAAAH!";
-                    p/="ok";
+                    newPath/="ok";
                 }
                 else {
                     std::cout << "Tja!";
-                    p/="tja";
+                    newPath/="tja";
                 }
-                p/=imgName;
+                newPath/=imgName;
 
-                copy_file(entry, p, copy_option::overwrite_if_exists);
-                fstream file(p.replace_extension(".txt"), std::ios::out);
+                copy_file(entry, newPath, copy_option::overwrite_if_exists);
+                fstream file(newPath.replace_extension(".txt"), std::ios::out);
 
                 float x,y, w, h;
 
@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
                 std::cout << "Are you shure you want to delete: " << imgName << "? (y/N)";  
                 char l = waitKey(0); 
                 if (l=='y') {
-                    remove(p/imgName);
+                    remove(newPath/imgName);
                     std::cout << imgName <<" deleted.."; 
                 } 
             }
@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
             }
             else {
                 std::cout << "NONO!!";
-                copy_file(entry, p/"nope"/imgName, copy_option::overwrite_if_exists);
+                copy_file(entry, newPath/"nope"/imgName, copy_option::overwrite_if_exists);
             }
             std::cout << std::endl;
         }
