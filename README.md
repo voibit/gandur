@@ -6,11 +6,13 @@ based upon prabindhs "arapaho". [https://github.com/prabindh/darknet]
 
 **Useage**
 
+```c++
 Gandur *net= new Gandur();  
 net->Detect(Mat,thersh);  
 Mat detimg= drawDetections();  
 vector<Rect> detRect =net->detections;  
-delete net;  
+delete net;
+```  
 
 
 ## imgdet
