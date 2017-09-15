@@ -6,11 +6,11 @@ based upon prabindhs "arapaho". [https://github.com/prabindh/darknet]
 
 **Useage**
 
-Gandur *net= new Gandur(); _ 
-net->Detect(Mat,thersh); _ 
-Mat detimg= drawDetections(); _  
-vector<Rect> detRect =net->detections; _
-delete net; _
+Gandur *net= new Gandur();  
+net->Detect(Mat,thersh);  
+Mat detimg= drawDetections();  
+vector<Rect> detRect =net->detections;  
+delete net;  
 
 
 ## imgdet
@@ -18,7 +18,7 @@ delete net; _
 Uses darknet to generate more training data from folder with images. 
 
 **Useage**
-
+./imdet folder
 Key | effect 
 --- | --- | 
 enter |	correct detection.
@@ -32,8 +32,9 @@ other | keep for manual boxing.
 A tool to grab different cropped image frames from video.  
 
 **Useage**
+./videt videofile.mp4
 Key | boxmode | grabmode
---- | --- | --- 
+--- | --- | --- | 
 a | add boxes. | 
-c | finish adding boxes | clear boxes.
-space | select box | save image.
+c | finish adding boxes | clear boxes
+space | select box | save image
