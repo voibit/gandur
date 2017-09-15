@@ -18,7 +18,9 @@ delete net;
 Uses darknet to generate more training data from folder with images. 
 
 **Useage**
+
 ./imdet folder
+
 Key | effect 
 --- | --- | 
 enter |	correct detection.
@@ -32,7 +34,9 @@ other | keep for manual boxing.
 A tool to grab different cropped image frames from video.  
 
 **Useage**
+
 ./videt videofile.mp4
+
 Key | boxmode | grabmode
 --- | --- | --- | 
 a | add boxes. | 
