@@ -1,4 +1,5 @@
-#Gandur
+
+# Gandur
 
 C++ wrapper class for darknet.
 based upon prabindhs "arapaho". https://github.com/prabindh/darknet
@@ -12,7 +13,7 @@ vector<Rect> detRect =net->detections;
 delete net;
 
 
-#imgdet
+# imgdet
 
 Uses darknet to generate more training data from folder with images. 
 
@@ -24,7 +25,7 @@ d: 		delete image
 other: 	keep for manual boxing. 
 
 
-#videt
+# videt
 
 A tool to grab different cropped image frames from video.  
 
