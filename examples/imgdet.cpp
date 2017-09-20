@@ -1,10 +1,72 @@
 #include "gandur.hpp"
-#include <fstream>
 #include <iostream>
 #include <boost/filesystem.hpp>
 
 using namespace cv;
 using namespace boost::filesystem;
+
+void classify(
+    const Mat &orig,
+    const std::vector<std::string> classes,
+    const path &p,
+    const path &fname) {
+
+    Mat img=orig.clone();
+    std::cout << "Manual classifer classify\n";
+    std::vector<Rect> boxes;
+    std::vector<int> ids;
+
+    while(1) {
+        std::cout << "press 0-9 for class id, r reset, s save, c cancel.  \n";
+        int k = waitKey(0);
+
+        //TODO: Add another way to select classes..
+        if (k=='q' || k== 27) break;
+        else if (k=='r') {
+            boxes.clear();
+            ids.clear();
+            img=orig.clone();
+            imshow("Gandur",img);
+
+        }
+        else if (k >47 && k < 48+classes.size()) {
+            int id=k-48;
+            std::cout << " id: "<< id << classes[id] << std::endl;
+            
+            rectangle(img, Rect(0,0,img.cols,26),CV_RGB(0, 0, 0), CV_FILLED, 8, 0);
+            putText(img, classes[id], Point(0,20), FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 230, 230), 1, CV_AA);
+            
+            imshow("Gandur",img);
+            Rect test = selectROI("Gandur",img);
+            if (test.width!=0 && test.height!=0) {
+                putText(img, classes[id], Point(test.x,test.y), FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
+                rectangle(img, test,CV_RGB(100, 200, 255), 1, 8, 0);
+                imshow("Gandur",img);
+
+                boxes.push_back(test);
+                ids.push_back(id);
+
+            }
+        }
+        else if(k=='s') {
+            path newFile = p/"ok"/fname;
+            copy_file(p/fname, newFile, copy_option::overwrite_if_exists);
+            fstream file(newFile.replace_extension(".txt"), std::ios::out);
+
+            for (size_t id = 0; id < ids.size(); id++) {
+                if (id > 0) file << std::endl;
+                file << ids[id]; 
+                file << " " << (boxes[id].x + boxes[id].width/2.)/img.cols;
+                file << " " << (boxes[id].y + boxes[id].height/2.)/img.rows;
+                file << " " << boxes[id].width / (float)img.cols;
+                file << " " << boxes[id].height / (float)img.rows;  
+            }
+            std::cout << newFile << " saved!\n";
+            file.close();
+            break;
+        } 
+    }
+}
 
 int main(int argc, char** argv) {
 
@@ -14,6 +76,8 @@ int main(int argc, char** argv) {
     if (!is_directory(p / "tja")) create_directory(p / "tja");
     if (!is_directory(p / "nope")) create_directory(p / "nope");
 
+    namedWindow("Gandur",WINDOW_AUTOSIZE);
+    moveWindow("Gandur",0,0);
     Gandur *net = new Gandur();
     Mat image; 
 
@@ -24,8 +88,7 @@ int main(int argc, char** argv) {
             path imgName=entry.path().filename();
 
             std::cout << std::endl << newPath/imgName << std::endl;
-            std::cout << "[enter]=yes, [tab]=maybe, [s]=skip, [d]=delete, rest=no\n";
-            std::cout << newPath/imgName << std::endl;  
+            std::cout << "[enter]=yes, [tab]=maybe, [s]=skip, [d]=delete, rest=no\n\n";
             image = imread( (newPath/imgName).string() );
              
             net->Detect(image,0.6, 0.5);
@@ -35,9 +98,9 @@ int main(int argc, char** argv) {
             char k = waitKey(0);
 
             if(k==27) break;
-            else if(k==char(10) || k==char(9)) { //char(10) = enter 9=tab
+            else if(k==char(10) || k==char(9) || k==' ') { //char(10) = enter 9=tab
 
-                if (k==char(10)) {
+                if (k==char(10) || k==' ') {
                     std::cout << "YEAAAH!";
                     newPath/="ok";
                 }
@@ -71,6 +134,9 @@ int main(int argc, char** argv) {
                     remove(newPath/imgName);
                     std::cout << imgName <<" deleted.."; 
                 } 
+            }
+            else if (k=='c') {
+                classify(image,net->getClasses(), newPath, imgName);
             }
             else if (k=='s') {
                 std::cout << "skipping " << imgName << "..";  

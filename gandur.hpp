@@ -64,6 +64,9 @@ public:
 
     int getLabelId(const std::string &name);
 
+    std::vector<std::string> getClasses();
+
+
 private:
     cv::Mat image; 
     box     *boxes;

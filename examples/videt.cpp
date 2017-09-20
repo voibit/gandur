@@ -1,5 +1,4 @@
 #include "gandur.hpp"
-#include <fstream>
 #include <iostream>
 #include <boost/filesystem.hpp>
 
@@ -10,11 +9,16 @@ using namespace boost::filesystem;
 int seeker = 0;
 bool seek = false;
 bool moveSeek = false;
+int frameSkip = 0;
 
 static void setSeek( int, void* )
 {
     if (!moveSeek) seek=true;
     else moveSeek = false;
+}
+static void setFrameSkip( int skip, void* )
+{
+    frameSkip = skip; 
 }
 
 
@@ -49,6 +53,7 @@ int main(int argc, char** argv) {
     namedWindow("Gandur",WINDOW_AUTOSIZE);
     moveWindow("Gandur",0,0);
     createTrackbar("seek","Gandur", &seeker, 100, setSeek);
+    createTrackbar("frameskip","Gandur", 0, 100, setFrameSkip);
 
     std::cout << "GANDUR YEAH!\n";
 
@@ -73,8 +78,12 @@ int main(int argc, char** argv) {
     }
     int frames = cap.get(CAP_PROP_FRAME_COUNT);
     int frame = 0;
+
+    
     while(cap.read(srcImg)) {
         frame =cap.get(CAP_PROP_POS_FRAMES);
+
+        if (frameSkip > 0) cap.set(CAP_PROP_FPS ,frameSkip);
 
         if (seek) {
             frame = seeker/100.*frames;

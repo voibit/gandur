@@ -171,10 +171,9 @@ bool Gandur::Detect(
 }
 
 int Gandur::getLabelId(const std::string &name) {
-    
-    size_t size = sizeof(*classNames);
 
-    for (size_t i = 0; i < size; i++) {
+
+    for (size_t i = 0; i < l.classes; i++) {
         if (std::string(classNames[i]) == name) return i;         
     }
     return -1; 
@@ -269,6 +268,11 @@ cv::Mat Gandur::drawDetections() {
         */
     }
     return img;
+}
+
+std::vector<std::string> Gandur::getClasses() {
+    std::vector<std::string> v(classNames, classNames+l.classes);
+    return v;
 }
 
 //////////////////////////////////////////////////////////////////

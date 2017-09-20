@@ -6,11 +6,13 @@ based upon prabindhs "arapaho" [https://github.com/prabindh/darknet].
 
 **Build instructions**
 
-Tested with  
-* opencv 3.3
+Tested with
+* opencv 3.3.0
 * boost 1.65
-* cuda 9
+* cuda 9 rc
 * cudnn 7  
+
+Make shure you have the right paths to cuda set in the makefile, and that you have made a shared lib out of darknet before building.
 
 ```bash
 make videt
@@ -21,13 +23,12 @@ make gandur
 **Useage**
 
 ```c++
-#include 'gandur.hpp'
-
+#include "gandur.hpp"
 
 Gandur *net= new Gandur();  
 net->Detect(Mat,thersh);  
-Mat detimg= drawDetections();  
-vector<Rect> detRect =net->detections;  
+Mat detimg = drawDetections();  
+vector<Rect> detRects = net->detections;  
 delete net;
 ```  
 
