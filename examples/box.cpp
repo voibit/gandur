@@ -5,7 +5,6 @@
 #include <boost/filesystem.hpp>
 #include <string>
 
-
 using namespace boost::filesystem;
 using namespace cv;
 
@@ -43,7 +42,6 @@ int main(int argc, char**argv){
 
         		putText(img, std::to_string(id), Point(box.x,box.y), FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
                 rectangle(img, box,CV_RGB(100, 200, 255), 1, 8, 0);
-
         	}
 
         	imshow("Gandur",img); 

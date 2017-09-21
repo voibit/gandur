@@ -34,10 +34,11 @@
 #define EPRINTF printf
 #endif
 
-static char CONFIG[]    = "gandur.conf"; 
+static char CONFIG[] = "gandur.conf"; 
 
 struct Detection {
     std::string label;
+    unsigned int labelId; 
     float prob;
     cv::Rect box;
 };
@@ -66,7 +67,6 @@ public:
 
     std::vector<std::string> getClasses();
 
-
 private:
     cv::Mat image; 
     box     *boxes;
@@ -75,9 +75,7 @@ private:
     network net;
     layer   l;
     float   nms;
-    int     maxClasses;
     int     threshold;
-
     float   xScale;
     float   yScale;
 

@@ -7,7 +7,7 @@ based upon prabindhs "arapaho" [https://github.com/prabindh/darknet].
 **Build instructions**
 
 Tested with
-* opencv 3.3.0
+* opencv 3.3.0 (compiled with contrib and cuda)
 * boost 1.65
 * cuda 9 rc
 * cudnn 7  
@@ -43,7 +43,8 @@ Uses darknet to generate more training data from folder with images.
 
 Key | effect 
 --- | --- | 
-enter |	correct detection.
+enter or space |	correct detection.
+c | manual classification
 tab | incomplete detection.
 d | delete image.
 other | keep for manual boxing. 

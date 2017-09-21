@@ -1,12 +1,8 @@
 /*************************************************************************
  * Gandur                                                                *
- *                                                                       *
- * C++ API for Yolo v2 (Detection)                                       *
- *                                                                       *                                                                      *
+ * C++ API for Yolo v2 (Detection)                                       *                                                                   *
  * Forked from, https://github.com/prabindh/darknet                      *
- *                                                                       *
  *************************************************************************/
-
 #include "gandur.hpp"
 
 Gandur::Gandur()
@@ -17,11 +13,9 @@ Gandur::Gandur()
     l = {};
     net = {};
     nms = 0.4;  //TODO: figure out what this is.... 
-    maxClasses = 0;
     threshold = 0;
     setlocale(LC_NUMERIC,"C");
     Setup();
-
 }
     
 Gandur::~Gandur()
@@ -34,13 +28,12 @@ Gandur::~Gandur()
         free_ptrs((void **)probs, l.w*l.h*l.n);
     if(classNames)
     {
-        //todo
+    //todo
     }
     boxes = 0;
     probs = 0;
     classNames = 0;
 }
-
     
 bool Gandur::Setup()
 {
@@ -49,7 +42,6 @@ bool Gandur::Setup()
     char *nameListFile = option_find_str(options, (char*)"names", (char*)"data/names.list");
     char *networkFile = option_find_str(options, (char*)"networkcfg", (char*)"data/sea.cfg");
     char *weightsFile = option_find_str(options, (char*)"weights", (char*)"data/sea.weights");
-    int maxClasses = option_find_int(options, (char*)"classes",6);
 
     if(!nameListFile){
         DPRINTF("No valid nameList file specified in options file [%s]!\n", CONFIG);
@@ -73,7 +65,6 @@ bool Gandur::Setup()
         EPRINTF("No weights file specified!\n");
         return false;
     }    
-
     // Print some debug info
     net = parse_network_cfg(networkFile);
 
@@ -83,14 +74,7 @@ bool Gandur::Setup()
     load_weights(&net, weightsFile);
     set_batch_network(&net, 1);     
     l = net.layers[net.n-1];
-    DPRINTF("Setup: layers = %d, %d, %d\n", l.w, l.h, l.n);
-
-    // Class limiter
-    if(l.classes > maxClasses)
-    {
-        EPRINTF("Warning: Read classes from cfg (%d) > maxClasses (%d)\n", l.classes, maxClasses);
-    }    
-
+    DPRINTF("Setup: layers = %d, %d, %d\n", l.w, l.h, l.n); 
     DPRINTF("Image expected w,h = [%d][%d]!\n", net.w, net.h);            
     
     boxes = (box*)calloc(l.w*l.h*l.n, sizeof(box));
@@ -172,13 +156,11 @@ bool Gandur::Detect(
 
 int Gandur::getLabelId(const std::string &name) {
 
-
     for (size_t i = 0; i < l.classes; i++) {
         if (std::string(classNames[i]) == name) return i;         
     }
     return -1; 
-
-} 
+}
     
 cv::Mat Gandur::resizeKeepAspectRatio(const cv::Mat &input, const cv::Size &dstSize, const cv::Scalar &bgcolor)
 {
@@ -306,7 +288,7 @@ void Gandur::__Detect(float* inData, float thresh, float hier_thresh)
 
             tmp.label= std::string(classNames[class1]);
             tmp.prob=prob;
-
+            tmp.labelId=class1;
             tmp.box.width=(double)image.cols* boxes[i].w*xScale;
             tmp.box.height=(double)image.rows* boxes[i].h*yScale;
 
@@ -319,5 +301,4 @@ void Gandur::__Detect(float* inData, float thresh, float hier_thresh)
             detections.push_back(tmp);
         }
     }
-
 }

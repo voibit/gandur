@@ -44,7 +44,11 @@ int main(int argn, char** argv) {
     	
     	imshow("Gandur",net->drawDetections());
 
-        char k = waitKey(ext(file, "jpg") || ext(file, "png")? 0 : 10 );
+        char k = waitKey(
+            ext(file, "jpg") ||
+            ext(file, "JPG") ||
+            ext(file, "JPE") ||
+            ext(file, "png") ? 0 : 10 );
 		if(k==27) break;
 	    }
 	    else {

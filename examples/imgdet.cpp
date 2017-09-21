@@ -5,72 +5,29 @@
 using namespace cv;
 using namespace boost::filesystem;
 
+
+void saveTxt(const Mat &img, path p, const std::vector <Detection> &dets);
+
 void classify(
     const Mat &orig,
     const std::vector<std::string> classes,
     const path &p,
-    const path &fname) {
+    const path &fname);
 
-    Mat img=orig.clone();
-    std::cout << "Manual classifer classify\n";
-    std::vector<Rect> boxes;
-    std::vector<int> ids;
-
-    while(1) {
-        std::cout << "press 0-9 for class id, r reset, s save, c cancel.  \n";
-        int k = waitKey(0);
-
-        //TODO: Add another way to select classes..
-        if (k=='q' || k== 27) break;
-        else if (k=='r') {
-            boxes.clear();
-            ids.clear();
-            img=orig.clone();
-            imshow("Gandur",img);
-
-        }
-        else if (k >47 && k < 48+classes.size()) {
-            int id=k-48;
-            std::cout << " id: "<< id << classes[id] << std::endl;
-            
-            rectangle(img, Rect(0,0,img.cols,26),CV_RGB(0, 0, 0), CV_FILLED, 8, 0);
-            putText(img, classes[id], Point(0,20), FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 230, 230), 1, CV_AA);
-            
-            imshow("Gandur",img);
-            Rect test = selectROI("Gandur",img);
-            if (test.width!=0 && test.height!=0) {
-                putText(img, classes[id], Point(test.x,test.y), FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
-                rectangle(img, test,CV_RGB(100, 200, 255), 1, 8, 0);
-                imshow("Gandur",img);
-
-                boxes.push_back(test);
-                ids.push_back(id);
-
-            }
-        }
-        else if(k=='s') {
-            path newFile = p/"ok"/fname;
-            copy_file(p/fname, newFile, copy_option::overwrite_if_exists);
-            fstream file(newFile.replace_extension(".txt"), std::ios::out);
-
-            for (size_t id = 0; id < ids.size(); id++) {
-                if (id > 0) file << std::endl;
-                file << ids[id]; 
-                file << " " << (boxes[id].x + boxes[id].width/2.)/img.cols;
-                file << " " << (boxes[id].y + boxes[id].height/2.)/img.rows;
-                file << " " << boxes[id].width / (float)img.cols;
-                file << " " << boxes[id].height / (float)img.rows;  
-            }
-            std::cout << newFile << " saved!\n";
-            file.close();
-            break;
-        } 
-    }
+bool isPic(path p) {
+    bool ret = extension(p)==".jpg";
+    ret |= extension(p)==".jpe";
+    ret |= extension(p)==".jpeg";
+    ret |= extension(p)==".png";
+    ret |= extension(p)==".JPG";
+    ret |= extension(p)==".PNG";
+    return ret;
 }
 
 int main(int argc, char** argv) {
 
     path p(argc>1? argv[1] : ".");
+    p=canonical(p);
 
     if (!is_directory(p / "ok")) create_directory(p / "ok");
     if (!is_directory(p / "tja")) create_directory(p / "tja");
@@ -81,69 +38,60 @@ int main(int argc, char** argv) {
     Gandur *net = new Gandur();
     Mat image; 
 
-    for(auto& entry : directory_iterator(p)) {
-        path newPath = canonical(p);
-        if (extension(entry)==".jpg" || extension(entry)==".png") {
 
-            path imgName=entry.path().filename();
+    directory_iterator dirItr(p);
+    for(auto &entry : dirItr) {
 
-            std::cout << std::endl << newPath/imgName << std::endl;
+        path imgName=entry.path().filename();
+        
+        if (isPic(imgName)) {
+
+            std::cout << std::endl << p/imgName << std::endl;
             std::cout << "[enter]=yes, [tab]=maybe, [s]=skip, [d]=delete, rest=no\n\n";
-            image = imread( (newPath/imgName).string() );
+            image = imread( (p/imgName).string() );
              
             net->Detect(image,0.6, 0.5);
 
             imshow("Gandur",net->drawDetections());
 
-            char k = waitKey(0);
+            int k = waitKey(0);
 
             if(k==27) break;
-            else if(k==char(10) || k==char(9) || k==' ') { //char(10) = enter 9=tab
+            else if(k >47 && k < 48+9) k='c';
 
-                if (k==char(10) || k==' ') {
-                    std::cout << "YEAAAH!";
-                    newPath/="ok";
-                }
-                else {
+            switch(k) {
+                case 9: //tab
                     std::cout << "Tja!";
-                    newPath/="tja";
-                }
-                newPath/=imgName;
-
-                copy_file(entry, newPath, copy_option::overwrite_if_exists);
-                fstream file(newPath.replace_extension(".txt"), std::ios::out);
-
-                float x,y, w, h;
-
-                for (auto det : net->detections) {
-
-                    w = det.box.width / float(image.cols);
-                    h = det.box.height / float(image.rows);
-                    x = (det.box.x + det.box.width/2.) / image.cols;
-                    y = (det.box.y + det.box.height/2.) / image.rows;
-                    
-                    file << net->getLabelId(det.label);
-                    file << " " << x << " " << y << " " << w << " " << h << std::endl;
-                }
-                file.close();
-            }
-            else if (k=='d') {
-                std::cout << "Are you shure you want to delete: " << imgName << "? (y/N)";  
-                char l = waitKey(0); 
-                if (l=='y') {
-                    remove(newPath/imgName);
-                    std::cout << imgName <<" deleted.."; 
-                } 
-            }
-            else if (k=='c') {
-                classify(image,net->getClasses(), newPath, imgName);
-            }
-            else if (k=='s') {
-                std::cout << "skipping " << imgName << "..";  
-            }
-            else {
-                std::cout << "NONO!!";
-                copy_file(entry, newPath/"nope"/imgName, copy_option::overwrite_if_exists);
+                    copy_file(entry, p/"tja"/imgName,
+                        copy_option::overwrite_if_exists);
+                    saveTxt(image, p/"tja"/imgName, net->detections);
+                    break;
+                case 10: //enter
+                case ' '://space
+                    std::cout << "YEAAAH!";
+                    copy_file(entry, p/"ok"/imgName,
+                        copy_option::overwrite_if_exists);
+                    saveTxt(image, p/"ok"/imgName, net->detections);
+                    break;
+                case 'd':
+                    std::cout << "Are you shure you want to delete: ";
+                    std::cout << imgName << "? (y/N)\n"; 
+                    if (waitKey(0)=='y') {
+                        remove(p/imgName);
+                        std::cout << imgName <<" deleted.."; 
+                    }
+                    break;
+                case 'c':
+                    classify(image,net->getClasses(), p, imgName);
+                    break;
+                case '<':
+                    std::cout << "skipping " << imgName << "..";
+                    break;
+                default: 
+                    std::cout << "NONO!! saing in nope,  you pressed "<< k << std::endl;
+                    copy_file(entry, p/"nope"/imgName,
+                        copy_option::overwrite_if_exists);
+                    break;
             }
             std::cout << std::endl;
         }
@@ -151,4 +99,76 @@ int main(int argc, char** argv) {
     delete net;
     net = 0;
 	return 0;
+}
+
+void saveTxt(const Mat &img, path p, const std::vector<Detection> &dets) {
+                    
+    fstream file(p.replace_extension(".txt"), std::ios::out);
+
+    for (size_t i = 0; i<dets.size();i++) {
+        if (i > 0) file << std::endl;
+        file << dets[i].labelId;
+        file << " " << (dets[i].box.x + dets[i].box.width/2.)/img.cols;
+        file << " " << (dets[i].box.y + dets[i].box.height/2.)/img.rows;
+        file << " " << dets[i].box.width / (float)img.cols;
+        file << " " << dets[i].box.height / (float)img.rows;  
+    }
+    file.close();
+    std::cout << p << " saved!\n";
+}
+
+void classify(
+    const Mat &orig,
+    const std::vector<std::string> classes,
+    const path &p,
+    const path &fname) {
+
+    Mat img=orig.clone();
+    std::cout << "Manual classifer classify\n";
+    std::vector<Detection> dets; 
+
+    while(1) {
+        std::cout << "press 0-9 for class id, r reset, s save, c cancel.  \n";
+        int k = waitKey(0);
+        if (k=='q' || k== 27) break;
+
+        //reset classification. 
+        else if (k=='r') {
+            dets.clear();
+            img=orig.clone();
+            imshow("Gandur",img);
+        }
+
+        else if (k >47 && k < 48+classes.size()) {
+            int id=k-48;
+            std::cout << " id: "<< id << classes[id] << std::endl;
+            
+            rectangle(img, Rect(0,0,img.cols,26),CV_RGB(0, 0, 0), CV_FILLED, 8, 0);
+            putText(img, classes[id], Point(0,20), FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 230, 230), 1, CV_AA);
+            
+            imshow("Gandur",img);
+            Rect box = selectROI("Gandur",img);
+
+            if (box.width!=0 && box.height!=0) {
+                Detection det;
+
+                det.box = box;
+                det.labelId = id; 
+                det.label = classes[id];
+                dets.push_back(det);
+
+                //TODO: loop thorug dets insted of overwriting current image
+                putText(img, classes[id], Point(box.x,box.y), FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
+                rectangle(img, box,CV_RGB(100, 200, 255), 1, 8, 0);
+                imshow("Gandur",img);
+            }
+        }
+        else if(k=='s') {
+            path newFile = p/"ok"/fname;
+            copy_file(p/fname, newFile, copy_option::overwrite_if_exists);
+            saveTxt(img, newFile, dets);
+
+            break;
+        } 
+    }
 }
