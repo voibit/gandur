@@ -20,7 +20,7 @@ make imgdet
 make gandur
 ```
 
-**Useage**
+**Usage**
 
 ```c++
 #include "gandur.hpp"
@@ -37,7 +37,7 @@ delete net;
 
 Uses darknet to generate more training data from folder with images. 
 
-**Useage**
+**Usage**
 
 ./imdet folder
 
@@ -54,7 +54,7 @@ other | keep for manual boxing.
 
 A tool to grab different cropped image frames from video.  
 
-**Useage**
+**Usage**
 
 ./videt videofile.mp4
 
