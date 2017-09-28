@@ -4,15 +4,42 @@
 
 using namespace cv;
 using namespace boost::filesystem;
+using std::vector;
+using std::string; 
 
 
-void saveTxt(const Mat &img, path p, const std::vector <Detection> &dets);
+bool isPic(path p);
+void process(vector<path> &imgs,Gandur *net);
+void classify(const Mat &orig,const vector<string> classes,const path &p,const path &fname);
+void saveTxt(const Mat &img, path p, const vector <Detection> &dets);
 
-void classify(
-    const Mat &orig,
-    const std::vector<std::string> classes,
-    const path &p,
-    const path &fname);
+
+
+int main(int argc, char** argv) {
+
+    path p(argc>1? argv[1] : ".");
+    p=canonical(p);
+
+    vector<path> imgs; 
+
+    if (!is_directory(p / "ok")) create_directory(p / "ok");
+
+    namedWindow("Gandur",WINDOW_AUTOSIZE);
+    moveWindow("Gandur",0,0);
+    Gandur *net = new Gandur();
+
+    for(auto &entry : directory_iterator(p)) {
+        path imgName=entry.path().filename();
+        if (isPic(imgName)) {
+            imgs.push_back(p/imgName);
+        }
+        process(imgs, net);
+    }
+    delete net;
+    net = 0;
+	return 0;
+}
+
 
 bool isPic(path p) {
     bool ret = extension(p)==".jpg";
@@ -24,86 +51,76 @@ bool isPic(path p) {
     return ret;
 }
 
-int main(int argc, char** argv) {
+void process(vector<path> &imgs,Gandur *net) {
+    Mat image;
+    size_t i = 0;
+    while (i<imgs.size()) {
 
-    path p(argc>1? argv[1] : ".");
-    p=canonical(p);
+        path p, imgName, imgPath, txt; 
+        p = imgs[i].parent_path();
+        imgName = imgs[i].filename();
+        imgPath = txt = p/"ok"/imgName;
+        txt.replace_extension(".txt");
 
-    if (!is_directory(p / "ok")) create_directory(p / "ok");
-    if (!is_directory(p / "tja")) create_directory(p / "tja");
-    if (!is_directory(p / "nope")) create_directory(p / "nope");
+        std::cout << std::endl << imgs[i] << std::endl;
+        std::cout << "[enter]=yes, [s]=skip, [d]=delete, rest=no\n\n";
+        image = imread( imgs[i].string() );
+         
+        net->Detect(image,0.6, 0.5);
 
-    namedWindow("Gandur",WINDOW_AUTOSIZE);
-    moveWindow("Gandur",0,0);
-    Gandur *net = new Gandur();
-    Mat image; 
+        if (exists(imgPath) && exists(txt)) {
 
-
-    directory_iterator dirItr(p);
-    for(auto &entry : dirItr) {
-
-        path imgName=entry.path().filename();
-        
-        if (isPic(imgName)) {
-
-            std::cout << std::endl << p/imgName << std::endl;
-            std::cout << "[enter]=yes, [tab]=maybe, [s]=skip, [d]=delete, rest=no\n\n";
-            image = imread( (p/imgName).string() );
-             
-            net->Detect(image,0.6, 0.5);
-
-            imshow("Gandur",net->drawDetections());
-
-            int k = waitKey(0);
-
-            if(k==27) break;
-            else if(k >47 && k < 48+9) k='c';
-
-            switch(k) {
-                case 9: //tab
-                    std::cout << "Tja!";
-                    copy_file(entry, p/"tja"/imgName,
-                        copy_option::overwrite_if_exists);
-                    saveTxt(image, p/"tja"/imgName, net->detections);
-                    break;
-                case 10: //enter
-                case ' '://space
-                    std::cout << "YEAAAH!";
-                    copy_file(entry, p/"ok"/imgName,
-                        copy_option::overwrite_if_exists);
-                    saveTxt(image, p/"ok"/imgName, net->detections);
-                    break;
-                case 'd':
-                    std::cout << "Are you shure you want to delete: ";
-                    std::cout << imgName << "? (y/N)\n"; 
-                    if (waitKey(0)=='y') {
-                        remove(p/imgName);
-                        std::cout << imgName <<" deleted.."; 
-                    }
-                    break;
-                case 'c':
-                    classify(image,net->getClasses(), p, imgName);
-                    break;
-                case '<':
-                    std::cout << "skipping " << imgName << "..";
-                    break;
-                default: 
-                    std::cout << "NONO!! saing in nope,  you pressed "<< k << std::endl;
-                    copy_file(entry, p/"nope"/imgName,
-                        copy_option::overwrite_if_exists);
-                    break;
-            }
-            std::cout << std::endl;
         }
+        else {
+            imshow("Gandur",net->drawDetections());
+        }
+        
+
+        int k = waitKey(0);
+
+        std::cout << k; 
+
+        if(k==27) break;
+        else if(k >47 && k < 48+9) k='c';
+
+        switch(k) {
+            case 81: //left
+            i--; 
+            break; 
+            case 83: //right
+            i++; 
+            break;  
+            case 10: //enter
+            case ' '://space
+            std::cout << "YEAAAH!";
+            copy_file(imgs[i], p/"ok"/imgName,
+                copy_option::overwrite_if_exists);
+            saveTxt(image, txt, net->detections);
+            break;
+            case 'd':
+            std::cout << "Are you shure you want to delete: ";
+            std::cout << imgName << "? (y/N)\n"; 
+            if (waitKey(0)=='y') {
+                remove(imgs[i]);
+                std::cout << imgName <<" deleted.."; 
+            }
+            break;
+            case 'c':
+            case 9: //tab
+            classify(image,net->getClasses(), p, imgName);
+            break;
+            default: 
+            i++;
+            break;
+        }
+        std::cout << std::endl;
     }
-    delete net;
-    net = 0;
-	return 0;
 }
 
-void saveTxt(const Mat &img, path p, const std::vector<Detection> &dets) {
+
+void saveTxt(const Mat &img, path p, const vector<Detection> &dets) {
                     
-    fstream file(p.replace_extension(".txt"), std::ios::out);
+    ofstream file(p);
 
     for (size_t i = 0; i<dets.size();i++) {
         if (i > 0) file << std::endl;
@@ -117,15 +134,32 @@ void saveTxt(const Mat &img, path p, const std::vector<Detection> &dets) {
     std::cout << p << " saved!\n";
 }
 
+vector<Detection> readTxt(Mat &img, path &p, Gandur *net) {
+    vector<Detection> dets; 
+    string line;
+    ifstream file(p);
+    
+    float id, x, y, w, h;
+    while (getline(file, line)) {
+        Detection det; 
+
+        stringstream ss(line);
+
+        ss << id, x, y, w, h; 
+    }
+
+
+}
+
 void classify(
     const Mat &orig,
-    const std::vector<std::string> classes,
+    const vector<string> classes,
     const path &p,
     const path &fname) {
 
     Mat img=orig.clone();
     std::cout << "Manual classifer classify\n";
-    std::vector<Detection> dets; 
+    vector<Detection> dets; 
 
     while(1) {
         std::cout << "press 0-9 for class id, r reset, s save, c cancel.  \n";

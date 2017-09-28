@@ -19,6 +19,9 @@ videt: clean-vid
 boxes: clean-boxes
 	g++ examples/box.cpp $(CVBOOST) -o boxes
 
+trainlist: clean-trainlist 
+	g++ examples/trainlist.cpp $(CVBOOST) -o trainlist
+
 clean:
 	rm -rf ./gandur
 clean-img:
@@ -27,3 +30,5 @@ clean-vid:
 	rm -rf ./videt
 clean-boxes:
 	rm -rf ./boxes
+clean-trainlist:
+	rm -rf ./trainlist

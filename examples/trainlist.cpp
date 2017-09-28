@@ -32,8 +32,8 @@ void writeList() {
 
 int main(int argc, char **argv) {
 
-	path dirsfile="./data/";
-	trainlist="../darknet.trainlist.txt";
+	path dirsfile="./data/traindirs.txt";
+	trainlist="../darknet/trainlist.txt";
 	if (argc>1) dirsfile=argv[2];
 	if (argc==3) trainlist=argv[3];
 
