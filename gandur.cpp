@@ -161,6 +161,12 @@ int Gandur::getLabelId(const std::string &name) {
     }
     return -1; 
 }
+std::string Gandur::getLabel(const unsigned int id) {
+    if (id < l.classes) {
+        return std::string(classNames[id]);
+    }
+    else return "error";
+}
     
 cv::Mat Gandur::resizeKeepAspectRatio(const cv::Mat &input, const cv::Size &dstSize, const cv::Scalar &bgcolor)
 {

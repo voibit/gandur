@@ -64,6 +64,7 @@ public:
     std::vector<Detection> detections;
 
     int getLabelId(const std::string &name);
+    std::string getLabel(const unsigned int id);
 
     std::vector<std::string> getClasses();
 
