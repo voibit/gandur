@@ -20,7 +20,7 @@ make imgdet
 make gandur
 ```
 
-**Useage**
+**Usage**
 
 ```c++
 #include "gandur.hpp"
