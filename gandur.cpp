@@ -1,12 +1,11 @@
 /*************************************************************************
  * Gandur                                                                *
  * C++ API for Yolo v2 (Detection)                                       *                                                                   *
- * Forked from, https://github.com/prabindh/darknet                      *
+ * Forked from arapaho, https://github.com/prabindh/darknet              *
  *************************************************************************/
 #include "gandur.hpp"
 
-Gandur::Gandur()
-{
+Gandur::Gandur() {
     boxes = 0;
     probs = 0;
     classNames = 0;
@@ -18,26 +17,22 @@ Gandur::Gandur()
     Setup();
 }
     
-Gandur::~Gandur()
-{
+Gandur::~Gandur() {
     // TODO - Massive cleanup here
-    
-    if(boxes) 
-        free(boxes);
-    if(probs)
-        free_ptrs((void **)probs, l.w*l.h*l.n);
-    if(classNames)
-    {
-    //todo
+    if(boxes) free(boxes);
+    if(probs) free_ptrs((void **)probs, l.w*l.h*l.n);
+    if(classNames) {
+        for (size_t i = 0; i < l.classes; i++) {         
+            free(classNames[i]);
+        }
+        free(classNames);
     }
     boxes = 0;
     probs = 0;
     classNames = 0;
 }
     
-bool Gandur::Setup()
-{
-
+bool Gandur::Setup() {
     list *options = read_data_cfg(CONFIG);
     char *nameListFile = option_find_str(options, (char*)"names", (char*)"data/names.list");
     char *networkFile = option_find_str(options, (char*)"networkcfg", (char*)"data/sea.cfg");
@@ -54,7 +49,6 @@ bool Gandur::Setup()
         DPRINTF("No valid class names specified in nameList file [%s]!\n", nameListFile);
         return false;
     }
-
     int j;
     // Early exits
     if(!networkFile) {
@@ -81,8 +75,7 @@ bool Gandur::Setup()
     probs = (float**)calloc(l.w*l.h*l.n, sizeof(float *));
     
     // Error exits
-    if(!boxes || !probs)
-    {
+    if(!boxes || !probs) {
         EPRINTF("Error allocating boxes/probs, %p/%p !\n", boxes, probs);
         goto clean_exit;
     }
@@ -109,23 +102,15 @@ clean_exit:
     return false;
 }
 
-
-bool Gandur::Detect(
-            const cv::Mat &inputMat,
-            float thresh, 
-            float hier_thresh=0.5)
-{
-
+bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float hier_thresh=0.5){
     image = inputMat;
     int i, count=0;
     xScale=1;
     yScale=1;    
     threshold = thresh;
-
     detections.clear();
 
-    if(inputMat.empty())
-    {
+    if(inputMat.empty()) {
         EPRINTF("Error in inputImage! [bgr = %d, w = %d, h = %d]\n",
             !inputMat.data, inputMat.cols != net.w,
             inputMat.rows != net.h);
@@ -168,8 +153,11 @@ std::string Gandur::getLabel(const unsigned int id) {
     else return "error";
 }
     
-cv::Mat Gandur::resizeKeepAspectRatio(const cv::Mat &input, const cv::Size &dstSize, const cv::Scalar &bgcolor)
-{
+cv::Mat Gandur::resizeKeepAspectRatio(
+    const cv::Mat &input,
+    const cv::Size &dstSize,
+    const cv::Scalar &bgcolor){
+
     cv::Mat output;
 
     double h1 = dstSize.width * (input.rows/(double)input.cols);
@@ -192,72 +180,6 @@ cv::Mat Gandur::resizeKeepAspectRatio(const cv::Mat &input, const cv::Size &dstS
     return output;
 }
 
-cv::Mat Gandur::drawDetections() {
-    using namespace cv; 
-
-    cv::Mat img = image.clone(); 
-
-    for(Detection det : detections) {
-        /*
-        //Calculate degrees.
-        float dpp = aov / sqrt(image.cols*image.cols + image.rows* image.rows) ;
-        float degrees = o.rects[i].x+o.rects[i].width/2-image.cols/2;
-        degrees *= dpp;
-        */
-
-        //DPRINTF("Label:%s prob: %00f \n\n", labels[objId].c_str(),probs[objId]);
-        
-        //Draw label
-        char prob[5];
-        sprintf(prob,"%1.2f",det.prob);
-
-        Point posLabel=det.box.tl();  //top left
-
-        putText(img, det.label, posLabel, FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
-
-        posLabel.x-=2;
-        posLabel.y-=1;
-
-        putText(img, det.label, posLabel, FONT_HERSHEY_DUPLEX, 1, CV_RGB(70, 250, 20), 1, CV_AA);   
-
-        posLabel.x-=55;
-
-        putText(img, prob, posLabel,FONT_HERSHEY_DUPLEX, 0.7,CV_RGB(0, 0, 0),1, CV_AA);
-        
-        posLabel.x-=1;
-        posLabel.y-=1;
-
-        putText(img, prob, posLabel, FONT_HERSHEY_DUPLEX, 0.7,CV_RGB(70, 200, 0),1, CV_AA);
-        
-        //Draw line from bottom 
-        Point posCircle = Point(det.box.x+det.box.width/2, det.box.y+det.box.height);
-        Point posDegree = Point(det.box.x, det.box.y+det.box.height+14);
-        
-        // Draw sircle and line
-        circle(img, posCircle, 4, cvScalar(50, 255, 200), 2);
-        line(img, cvPoint(img.cols/2-1, img.rows), posCircle,cvScalar(0, 0, 0), 2);
-        line(img, cvPoint(img.cols/2+1, img.rows),posCircle, CV_RGB(100, 200, 255), 1);
-        // Show image and overlay using OpenCV
-        
-        rectangle(img, det.box,CV_RGB(100, 200, 255), 1, 8, 0);
-
-        /*
-        //Draw bearing from center
-        char str[9]; 
-        sprintf(str,"%3.2f", degrees);
-
-        posDegree.x+=50;
-        putText(img, str, posDegree,
-                FONT_HERSHEY_DUPLEX, 1.3, CV_RGB(0, 0, 0), 2, CV_AA);
-        posDegree.x-=2;
-        posDegree.y-=1;         
-        putText(img, str, posDegree,
-                FONT_HERSHEY_DUPLEX, 1.3, CV_RGB(70, 250, 20), 1, CV_AA);
-        */
-    }
-    return img;
-}
-
 std::vector<std::string> Gandur::getClasses() {
     std::vector<std::string> v(classNames, classNames+l.classes);
     return v;
@@ -266,8 +188,7 @@ std::vector<std::string> Gandur::getClasses() {
 //////////////////////////////////////////////////////////////////
 /// Private APIs
 //////////////////////////////////////////////////////////////////
-void Gandur::__Detect(float* inData, float thresh, float hier_thresh)
-{
+void Gandur::__Detect(float* inData, float thresh, float hier_thresh) {
     int i;
     // Predict
     network_predict(net, inData);

@@ -28,9 +28,11 @@ void next();
 void prev(); 
 void show(size_t i);
 void draw();
+void banner();
 void label();
 void save(); 
 void loopImgs();
+
 
 Gandur *net; 
 path imgName;
@@ -40,55 +42,56 @@ path savePath;
 vector<path> imgs;
 vector<Detection> dets;
 vector<string> classes;
-void banner();
-
 
 void loopImgs() {
-    while (true) {
-        int k = waitKey();
+	namedWindow("Gandur",WINDOW_AUTOSIZE);
+    moveWindow("Gandur",0,0);
+    show(0); 
+	while (true) {
+		int k = waitKey();
 
-        if(k==27) break;
-        else if(k >47 && k < 48+9) k='c';
+		if(k==27) break;
+		else if(k >47 && k < 48+9) k='c';
 
-        switch(k) {
-            case 81: //left
-            prev();
-            break; 
-            case 83: //right
-            next();
-            break;  
-            case 10: //enter
-            case ' '://space
-            save();
-            break;
-            case 'd':
-            message = "Are you shure you want to delete this file?(y/N):";
-            draw();
-            if (waitKey(0)=='y') {
-               delImg();
-            }
-            break;
-            case 'l':
-            case 'c':
-            case 9: //tab
-            label();
-            break;
-            default: 
-            next();
-            break;
-        }
-    }
+		switch(k) {
+			case 81: //left
+			prev();
+			break; 
+			case 83: //right
+			next();
+			break;  
+			case 10: //enter
+			case ' '://space
+			save();
+			break;
+			case 'd':
+			message = "Are you shure you want to delete this file?(y/N):";
+			draw();
+			if (waitKey(0)=='y') {
+			   delImg();
+			}
+			break;
+			case 'l':
+			case 'c':
+			case 9: //tab
+			label();
+			break;
+			default: 
+			next();
+			break;
+		}
+	}
 }
 
 vector<path> getImgs(path p) {
-    vector<path> tmp; 
-    for(auto &entry : directory_iterator(p)) {
-        imgName=entry.path().filename();
-        if (isImg(imgName)) {
-            tmp.push_back(p/imgName);
-        }
-    }
-    return tmp;  
+	vector<path> tmp; 
+	for(auto &entry : directory_iterator(p)) {
+		imgName=entry.path().filename();
+		if (isImg(imgName)) {
+			tmp.push_back(p/imgName);
+		}
+	}
+	return tmp;  
 }
 
 void next() {
@@ -101,30 +104,27 @@ void prev() {
 }
 void show(size_t i) {
 	imgName=imgs[i].filename();
-
 	txtName=imgName;
 	txtName.replace_extension(".txt");
 
-    origImg=imread(imgs[i].string());
-    img=origImg.clone();
+	origImg=imread(imgs[i].string());
+	img=origImg.clone();
 
 	if (exists(savePath/imgName) && exists(savePath/txtName)) {
-            message="already labeled.";
-            readTxt(savePath/txtName);
-    }
-    else {
-        net->Detect(img,0.6, 0.5);
-        dets = net->detections;
-        if (dets.size()>0) {
-        	message="Network results";
-        }
-        else message = "No detections";
-    }
-    draw();
+		message="already labeled.";
+		readTxt(savePath/txtName);
+	}
+	else {
+		net->Detect(img,0.6, 0.5);
+		dets = net->detections;
+		if (dets.size()>0) message="Network results";
+		else message = "No detections";
+	}
+	draw();
 }
 
 bool delImg() {
-    return delImg(current);
+	return delImg(current);
 }
 bool delImg(size_t i) {
 	if (i > count) return false; 
@@ -139,52 +139,49 @@ bool delImg(size_t i) {
 
 bool isImg(path p) {
 	string ext=extension(p);
-    bool ret = ext==".jpg";
-    ret |= ext==".jpe";
-    ret |= ext==".jpeg";
-    ret |= ext==".png";
-    ret |= ext==".JPG";
-    ret |= ext==".PNG";
-    return ret;
+	bool ret = ext==".jpg";
+	ret |= ext==".JPG";
+	ret |= ext==".jpe";
+	ret |= ext==".JPE";
+	ret |= ext==".jpeg";
+	ret |= ext==".JPEG";	
+	ret |= ext==".png";
+	ret |= ext==".PNG";
+	return ret;
 }
 
 void readTxt(path p) {
-    dets.clear();
-    string line;
-    ifstream file(p);
-    float x, y, w, h;
-    int id, X,Y, W, H; 
+	dets.clear();
+	string line;
+	ifstream file(p);
+	float x, y, w, h;
+	int id, X,Y, W, H; 
 
-    while (getline(file, line)) {
-        Detection det; 
-        std::istringstream ss(line);
+	while (getline(file, line)) {
+		Detection det; 
+		std::istringstream ss(line);
+		ss >> id >> x >> y >> w >> h;
 
-        ss >> id >> x >> y >> w >> h;
-
-        W = w * img.cols;
-        H = h * img.rows;
-        X = x*img.cols -W/2;
-        Y = y*img.rows - H/2;
-
-        det.box=Rect(X,Y,W,H); 
-        det.labelId=id;
-        det.label=net->getLabel(id);
-        det.prob=1;
-        dets.push_back(det); 
-    }
+		W = w * img.cols;
+		H = h * img.rows;
+		X = x*img.cols -W/2;
+		Y = y*img.rows - H/2;
+		det.box=Rect(X,Y,W,H); 
+		det.labelId=id;
+		det.label=net->getLabel(id);
+		det.prob=1;
+		dets.push_back(det); 
+	}
 }
 
 void banner() {
-
 	Rect box(0,0,img.cols,26);
-	
 	Scalar rgba(0,0,0,0.7);
-    double alpha = rgba[3] == 0 ? 1: rgba[3];
-
-    Scalar rgb(rgba[0],rgba[1],rgba[2]);
-    Mat roi = img(box);
-    Mat color(roi.size(),CV_8UC3, rgb);
-    addWeighted(color, alpha, roi, 1.0 - alpha , 0.0, roi);
+	double alpha = rgba[3] == 0 ? 1: rgba[3];
+	Scalar rgb(rgba[0],rgba[1],rgba[2]);
+	Mat roi = img(box);
+	Mat color(roi.size(),CV_8UC3, rgb);
+	addWeighted(color, alpha, roi, 1.0 - alpha , 0.0, roi);
 }
 
 void draw() {
@@ -196,81 +193,79 @@ void draw() {
 
 	//draw picnr 
 	string picnr="|"+to_string(current+1)+":"+to_string(count);
-    picnr+="| "+imgName.string();
-    putText(img, picnr, Point(0,20), FONT_HERSHEY_DUPLEX, 0.5, CV_RGB(30, 230, 150), 1, CV_AA);
+	picnr+="| "+imgName.string();
+	putText(img, picnr, Point(0,20), FONT_HERSHEY_DUPLEX, 0.5, CV_RGB(30, 230, 150), 1, CV_AA);
 
 	//Draw message
 	Size textSize = getTextSize(message, FONT_HERSHEY_DUPLEX , 0.5, 1,0);
-    putText(img, message, Point(img.cols-textSize.width,20), FONT_HERSHEY_DUPLEX, 0.5, CV_RGB(30, 230, 150), 1, CV_AA);
+	putText(img, message, Point(img.cols-textSize.width,20), FONT_HERSHEY_DUPLEX, 0.5, CV_RGB(30, 230, 150), 1, CV_AA);
 
-    //Draw detections 
-    for (auto det : dets) {
-        Point txtpos(det.box.x+2,det.box.y+1); 
-        putText(img, det.label, txtpos, FONT_HERSHEY_DUPLEX, 0.6, CV_RGB(0, 0, 0), 1, CV_AA);
-        txtpos.x-=2;txtpos.y-=1; 
-        putText(img, det.label, txtpos, FONT_HERSHEY_DUPLEX, 0.6, CV_RGB(0, 255, 50), 1, CV_AA);
-        rectangle(img, det.box,CV_RGB(100, 200, 255), 1, 8, 0);
-    }
-    imshow("Gandur",img);
+	//Draw detections 
+	for (auto det : dets) {
+		Point txtpos(det.box.x+2,det.box.y+1); 
+		putText(img, det.label, txtpos, FONT_HERSHEY_DUPLEX, 0.6, CV_RGB(0, 0, 0), 1, CV_AA);
+		txtpos.x-=2;txtpos.y-=1; 
+		putText(img, det.label, txtpos, FONT_HERSHEY_DUPLEX, 0.6, CV_RGB(0, 255, 50), 1, CV_AA);
+		rectangle(img, det.box,CV_RGB(100, 200, 255), 1, 8, 0);
+	}
+	imshow("Gandur",img);
 }
 
 
 void label() {
-
 	while(true) {
-        message = "press 0-9 for class id, r reset, s save, c cancel";
-        draw();
-        int k = waitKey(0);
-        if (k=='q' || k== 27) break;
+		message = "press 0-9 for class id, r reset, s save, c cancel";
+		draw();
+		int k = waitKey(0);
+		if (k=='q' || k== 27) break;
 
-        //reset classification. 
-        else if (k=='r') {
-            dets.clear();
-            draw();
-        }
-        else if (k >47 && k < 48+classes.size()) {
-            int id=k-48;
-            message = classes[id];
-            draw();
-            
-            Rect box = selectROI("Gandur",img);
+		//reset classification. 
+		else if (k=='r') {
+			dets.clear();
+			draw();
+		}
+		else if (k >47 && k < 48+classes.size()) {
+			int id=k-48;
+			message = classes[id];
+			draw();
+			
+			Rect box = selectROI("Gandur",img);
 
-            if (box.width!=0 && box.height!=0) {
-                Detection det;
-                det.box = box;
-                det.labelId = id; 
-                det.label = classes[id];
-                dets.push_back(det);
-                draw();
-            }
-        }
-        else if(k=='s') {
-        	save();
-            break;
-        } 
-    }
+			if (box.width!=0 && box.height!=0) {
+				Detection det;
+				det.box = box;
+				det.labelId = id; 
+				det.label = classes[id];
+				dets.push_back(det);
+				draw();
+			}
+		}
+		else if(k=='s') {
+			save();
+			break;
+		} 
+	}
 }
 
 void save() {
-    copy_file(workPath/imgName, savePath/imgName, copy_option::overwrite_if_exists);
-    saveTxt(savePath/txtName);
-    message="labels saved.. ";
-    draw();
-    waitKey(600);
+	copy_file(workPath/imgName, savePath/imgName, copy_option::overwrite_if_exists);
+	saveTxt(savePath/txtName);
+	message="labels saved.. ";
+	draw();
+	waitKey(600);
 }
 
-void saveTxt(path p) {
-                    
-    ofstream file(savePath/txtName);
-    for (size_t i = 0; i<dets.size();i++) {
-        if (i > 0) file << std::endl;
-        file << dets[i].labelId;
-        file << " " << (dets[i].box.x + dets[i].box.width/2.)/img.cols;
-        file << " " << (dets[i].box.y + dets[i].box.height/2.)/img.rows;
-        file << " " << dets[i].box.width / (float)img.cols;
-        file << " " << dets[i].box.height / (float)img.rows;  
-    }
-    file.close();
+void saveTxt(path p) {			
+	ofstream file(savePath/txtName);
+	for (size_t i = 0; i<dets.size();i++) {
+		if (i > 0) file << std::endl;
+		file << dets[i].labelId;
+		file << " " << (dets[i].box.x + dets[i].box.width/2.)/img.cols;
+		file << " " << (dets[i].box.y + dets[i].box.height/2.)/img.rows;
+		file << " " << dets[i].box.width / (float)img.cols;
+		file << " " << dets[i].box.height / (float)img.rows;  
+	}
+	file.close();
 }
 
 } //namespace Imgdet 
