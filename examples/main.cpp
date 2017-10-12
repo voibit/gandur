@@ -102,7 +102,7 @@ int main(int argn, char** argv) {
         dets.clear();
     	if(cap.read(image)) {
 
-    	net->Detect(image,0.6, 0.5);
+    	net->Detect(image,0.5);
     	dets = net->detections;
 
     	imshow("Gandur",drawDetections(image,dets));

@@ -102,7 +102,7 @@ clean_exit:
     return false;
 }
 
-bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float hier_thresh=0.5){
+bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float tree_thresh){
     image = inputMat;
     int i, count=0;
     xScale=1;
@@ -134,7 +134,7 @@ bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float hier_thresh=0.5)
     split(floatMat, floatMatChannels);
     vconcat(floatMatChannels, floatMat);
 
-    __Detect((float*)floatMat.data, thresh, hier_thresh);
+    __Detect((float*)floatMat.data, thresh, tree_thresh);
 
     return true;
 }
@@ -188,11 +188,23 @@ std::vector<std::string> Gandur::getClasses() {
 //////////////////////////////////////////////////////////////////
 /// Private APIs
 //////////////////////////////////////////////////////////////////
-void Gandur::__Detect(float* inData, float thresh, float hier_thresh) {
+void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
     int i;
     // Predict
     network_predict(net, inData);
-    get_region_boxes(l, 1, 1,net.w, net.h, thresh, probs, boxes, 0, 0, hier_thresh,1);
+
+    /* for latest commit
+    float **masks = 0;
+    if (l.coords > 4){
+        masks = (float*)calloc(l.w*l.h*l.n, sizeof(float*));
+        for(int j = 0; j < l.w*l.h*l.n; ++j) masks[j] = (float)calloc(l.coords-4, sizeof(float *));
+    
+    get_region_boxes(l, 1, 1,net.w, net.h, thresh, probs, boxes, masks, 0, 0, tree_thresh,1);
+
+    }
+    */
+    get_region_boxes(l, 1, 1,net.w, net.h, thresh, probs, boxes, 0, 0, tree_thresh,1);
+
 
     DPRINTF("l.softmax_tree = %p, nms = %f\n", l.softmax_tree, nms);
     if (l.softmax_tree && nms)

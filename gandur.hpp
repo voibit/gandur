@@ -34,7 +34,7 @@
 #define EPRINTF printf
 #endif
 
-static char CONFIG[] = "gandur.conf"; 
+static char CONFIG[] = "/home/ed15/gandur/gandur.conf"; 
 
 struct Detection {
     std::string label;
@@ -52,7 +52,7 @@ public:
     bool Detect(
         const cv::Mat & inputMat,
         float thresh,
-        float hier_thresh);
+        float tree_thresh=0.5);
 
     cv::Mat drawDetections();
 
@@ -65,7 +65,6 @@ public:
 
     int getLabelId(const std::string &name);
     std::string getLabel(const unsigned int id);
-
     std::vector<std::string> getClasses();
 
 private:
@@ -80,7 +79,7 @@ private:
     float   xScale;
     float   yScale;
 
-    void __Detect(float* inData, float thresh, float hier_thresh);
+    void __Detect(float* inData, float thresh, float tree_thresh);
 };
 
 #endif // _ENABLE_GANDUR
