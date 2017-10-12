@@ -16,9 +16,12 @@ Mat origImg;
 Mat img;
 string message;
 size_t count = 0;
-size_t current = 0; 
+size_t current = 0;
+
 
 vector<path> getImgs(path p);
+bool doresize=true;
+
 bool isImg(path p);
 bool delImg();
 bool delImg(size_t i);
@@ -34,7 +37,7 @@ void save();
 void loopImgs();
 
 
-Gandur *net; 
+Gandur *net=0; 
 path imgName;
 path txtName;
 path workPath; 
@@ -108,14 +111,29 @@ void show(size_t i) {
 	txtName.replace_extension(".txt");
 
 	origImg=imread(imgs[i].string());
+
+
+	if (doresize) {
+		double factor = 720. / origImg.rows; 
+		resize(origImg, origImg, cv::Size(0,0), factor, factor, CV_INTER_LINEAR);
+
+	}
+
 	img=origImg.clone();
+	net->Detect(img,0.5);
 
 	if (exists(savePath/imgName) && exists(savePath/txtName)) {
-		message="already labeled.";
+		
 		readTxt(savePath/txtName);
+		if (net->detections.size() > dets.size()) {
+			message="labeled, however more results from network.";
+		}
+		else {
+			message="already labeled.";
+		}
+
 	}
 	else {
-		net->Detect(img,0.6, 0.5);
 		dets = net->detections;
 		if (dets.size()>0) message="Network results";
 		else message = "No detections";
@@ -168,7 +186,7 @@ void readTxt(path p) {
 		Y = y*img.rows - H/2;
 		det.box=Rect(X,Y,W,H); 
 		det.labelId=id;
-		det.label=net->getLabel(id);
+		if (net) det.label=net->getLabel(id);
 		det.prob=1;
 		dets.push_back(det); 
 	}
@@ -202,11 +220,17 @@ void draw() {
 
 	//Draw detections 
 	for (auto det : dets) {
+		rectangle(img, det.box,CV_RGB(100, 200, 255), 1, 8, 0);
 		Point txtpos(det.box.x+2,det.box.y+1); 
 		putText(img, det.label, txtpos, FONT_HERSHEY_DUPLEX, 0.6, CV_RGB(0, 0, 0), 1, CV_AA);
 		txtpos.x-=2;txtpos.y-=1; 
 		putText(img, det.label, txtpos, FONT_HERSHEY_DUPLEX, 0.6, CV_RGB(0, 255, 50), 1, CV_AA);
-		rectangle(img, det.box,CV_RGB(100, 200, 255), 1, 8, 0);
+		textSize = getTextSize(det.label, FONT_HERSHEY_DUPLEX , 0.6, 1,0);
+		txtpos.x+=textSize.width-2;
+		int prob = det.prob*100.;
+		putText(img, to_string(prob)+"%", txtpos, FONT_HERSHEY_DUPLEX, 0.4, CV_RGB(0, 0, 0), 1, CV_AA);
+		txtpos.x-=2;txtpos.y-=1;
+		putText(img, to_string(prob)+"%", txtpos, FONT_HERSHEY_DUPLEX, 0.4, CV_RGB(0, 210, 20), 1, CV_AA);
 	}
 	imshow("Gandur",img);
 }
@@ -222,6 +246,13 @@ void label() {
 		//reset classification. 
 		else if (k=='r') {
 			dets.clear();
+			draw();
+		}
+		//reset classification. 
+		else if (k=='n') {
+			dets.clear();
+			dets = net->detections;
+			message = "network results";
 			draw();
 		}
 		else if (k >47 && k < 48+classes.size()) {
@@ -246,7 +277,6 @@ void label() {
 		} 
 	}
 }
-
 void save() {
 	copy_file(workPath/imgName, savePath/imgName, copy_option::overwrite_if_exists);
 	saveTxt(savePath/txtName);
