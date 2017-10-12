@@ -1,7 +1,6 @@
 # Makefile to build gandur
 #-lopencv_viz 
 
-
 DARKNET=-I../darknet/include/ -I../darknet/src/ -L/usr/local/lib -ldarknet-cpp-shared -DGPU -DCUDNN 
 CUDA=-I/opt/cuda/include/ -L/opt/cuda/lib64 -lcuda -lcudart -lcublas -lcurand
 CVBOOST=-I./ `pkg-config --libs opencv` -lboost_system -lboost_filesystem
@@ -19,6 +18,8 @@ boxes: clean-boxes
 	g++ examples/box.cpp $(CVBOOST) -o boxes
 trainlist: clean-trainlist 
 	g++ examples/trainlist.cpp $(CVBOOST) -o trainlist
+crop: clean-crop
+	g++ examples/crop.cpp -L /usr/local/lib $(CVBOOST) -o crop
 changeClass: clean-changeClass
 	g++ examples/changeClass.cpp $(ALL) -o changeClass
 
@@ -32,5 +33,8 @@ clean-boxes:
 	rm -rf ./boxes
 clean-trainlist:
 	rm -rf ./trainlist
+clean-crop:
+	rm -rf ./crop
 clean-changeClass:
 	rm -rf ./changeClass
+
