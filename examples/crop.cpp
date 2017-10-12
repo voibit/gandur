@@ -65,7 +65,6 @@ bool loadNext(){
 void loadimg(size_t i){
 	nextImgName=imgs[i].filename();
 	nextImage = imread(imgs[i].string());
-		
 }
 
 void show(){
@@ -85,7 +84,6 @@ void icrop(int x, int y){
 	if(x < (xx/2)) x = (xx/2);
 	if(y < (yy/2)) y = (yy/2);
 
-
 	Rect r = Rect(	min(x - (xx/2), currentImage.cols - (xx)),
 					min(y - (yy/2), currentImage.rows - (yy)),  xx, yy);
 	std::cout << r.x << " " << r.y << " " << r.width << " " << r.height << endl;
@@ -96,7 +94,6 @@ void icrop(int x, int y){
 
 	rectangle(copyImage, r, 1, 8, 0);
 	imshow("crop", copyImage);
-
 }
 
 void saveCrop(path f, int i, path dir, Mat image){
@@ -150,15 +147,12 @@ int main (int argc, char **argv)
 }
 	std::cout << "Loaded: " << cnt << " images" << std::endl;
 
-	
-	current = 0;
 	currentImage = imread(imgs[current].string());
 	nextImage = imread(imgs[current + 1].string());
 
 	copyImage = currentImage.clone();
 	imshow("crop", currentImage);
 
-     
 	setMouseCallback("crop", on_mouse, NULL);
 	while(true){
 
