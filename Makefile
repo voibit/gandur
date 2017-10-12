@@ -19,6 +19,9 @@ boxes: clean-boxes
 	g++ examples/box.cpp $(CVBOOST) -o boxes
 trainlist: clean-trainlist 
 	g++ examples/trainlist.cpp $(CVBOOST) -o trainlist
+crop: clean-crop
+	g++ examples/crop.cpp -L /usr/local/lib `pkg-config --libs opencv` $(CVBOOST) -o crop
+
 
 clean:
 	rm -rf ./gandur
@@ -30,3 +33,5 @@ clean-boxes:
 	rm -rf ./boxes
 clean-trainlist:
 	rm -rf ./trainlist
+clean-crop:
+	rm -rf ./crop
