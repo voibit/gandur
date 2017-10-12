@@ -123,6 +123,7 @@ vector<path> getImgs(path p) {
 			tmp.push_back(p/imgName);
 		}
 	}
+	sort(tmp.begin(), tmp.end());
 	return tmp;
 }
  
