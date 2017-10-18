@@ -34,7 +34,7 @@ void draw();
 void banner();
 void label();
 void save(); 
-void loopImgs();
+void loopImgs(size_t start=0);
 
 
 Gandur *net=0; 
@@ -46,10 +46,10 @@ vector<path> imgs;
 vector<Detection> dets;
 vector<string> classes;
 
-void loopImgs() {
+void loopImgs(size_t start) {
 	namedWindow("Gandur",WINDOW_AUTOSIZE);
     moveWindow("Gandur",0,0);
-    show(0); 
+    show(start); 
 	while (true) {
 		int k = waitKey();
 
@@ -94,7 +94,9 @@ vector<path> getImgs(path p) {
 			tmp.push_back(p/imgName);
 		}
 	}
-	return tmp;  
+
+	sort(tmp.begin(), tmp.end());  
+	return tmp;
 }
 
 void next() {
@@ -106,6 +108,7 @@ void prev() {
 	show(current); 
 }
 void show(size_t i) {
+	current=i;
 	imgName=imgs[i].filename();
 	txtName=imgName;
 	txtName.replace_extension(".txt");
@@ -114,7 +117,7 @@ void show(size_t i) {
 
 
 	if (doresize) {
-		double factor = 720. / origImg.rows; 
+		double factor = 1088. / origImg.rows; 
 		resize(origImg, origImg, cv::Size(0,0), factor, factor, CV_INTER_LINEAR);
 
 	}
@@ -165,6 +168,9 @@ bool isImg(path p) {
 	ret |= ext==".JPEG";	
 	ret |= ext==".png";
 	ret |= ext==".PNG";
+
+	ret |= ext==".bmp";
+	ret |= ext==".BMP";
 	return ret;
 }
 
@@ -271,7 +277,7 @@ void label() {
 				draw();
 			}
 		}
-		else if(k=='s') {
+		else if(k=='s' || k == ' ') {
 			save();
 			break;
 		} 
