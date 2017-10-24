@@ -14,14 +14,16 @@ imgdet: clean-img
 	g++ examples/imgdet.cpp gandur.cpp $(ALL) -o imgdet
 videt: clean-vid
 	g++ examples/videt.cpp gandur.cpp $(ALL) -o videt
-boxes: clean-boxes
-	g++ examples/box.cpp $(CVBOOST) -o boxes
 trainlist: clean-trainlist 
 	g++ examples/trainlist.cpp $(CVBOOST) -o trainlist
+trainlist2: clean-trainlist2
+	g++ examples/trainlist2.cpp $(CVBOOST) -o trainlist2
 crop: clean-crop
 	g++ examples/crop.cpp -L /usr/local/lib $(CVBOOST) -o crop
 changeClass: clean-changeClass
 	g++ examples/changeClass.cpp $(ALL) -o changeClass
+small: clean-small
+	g++ examples/small.cpp $(CVBOOST) -o small
 
 clean:
 	rm -rf ./gandur
@@ -29,12 +31,15 @@ clean-img:
 	rm -rf ./imgdet
 clean-vid:
 	rm -rf ./videt
-clean-boxes:
-	rm -rf ./boxes
 clean-trainlist:
+	rm -rf ./trainlist
+clean-trainlist2:
 	rm -rf ./trainlist
 clean-crop:
 	rm -rf ./crop
 clean-changeClass:
 	rm -rf ./changeClass
+clean-small:
+	rm -rf ./small
+
 
