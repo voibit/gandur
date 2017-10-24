@@ -24,6 +24,7 @@ void Prev();
 void Next();
 void loadimg(size_t);
 void saveCrop(path f, int i, path dir, Mat image);
+void makeRect(int x,int y, Mat &image);
 
 path workPath;
 path savePath;
@@ -36,12 +37,18 @@ size_t cnt = 0;
 size_t current = 0;
 
 static void on_mouse(int event, int x, int y, int flags, void* ){
-if (event == CV_EVENT_LBUTTONDOWN)
-{
-	std::cout << "@ Left mouse button pressed at: " << x << "," << y << std::endl;
+	if (event == CV_EVENT_LBUTTONDOWN)
+	{
+		std::cout << "@ Left mouse button pressed at: " << x << "," << y << std::endl;
 	
-	icrop(x,y);
+		icrop(x,y);
     }
+	if (event == CV_EVENT_MOUSEMOVE){
+		Mat overlay = copyImage.clone(); 			
+		makeRect(x, y, overlay);
+		imshow("crop", overlay);
+		
+	}
 }
 
 void Next(){
@@ -94,6 +101,17 @@ void icrop(int x, int y){
 
 	rectangle(copyImage, r, 1, 8, 0);
 	imshow("crop", copyImage);
+}
+
+void makeRect(int x,int y, Mat &image){
+	if(currentImage.cols < netx) netx = currentImage.cols;
+	if(currentImage.rows < nety) nety = currentImage.rows;
+	if(x < (netx/2)) x = (netx/2);
+	if(y < (nety/2)) y = (nety/2);
+
+	Rect r = Rect(	min(x - (netx/2), currentImage.cols - (netx)),
+					min(y - (nety/2), currentImage.rows - (nety)),  netx, nety);
+	rectangle(image, r, 1, 8, 0);
 }
 
 void saveCrop(path f, int i, path dir, Mat image){
