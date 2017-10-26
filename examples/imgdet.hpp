@@ -32,7 +32,7 @@ void prev();
 void show(size_t i);
 void draw();
 void banner();
-void label();
+bool label();
 void save(); 
 void loopImgs(size_t start=0);
 
@@ -49,42 +49,27 @@ vector<string> classes;
 void loopImgs(size_t start) {
 	namedWindow("Gandur",WINDOW_AUTOSIZE);
     moveWindow("Gandur",0,0);
-    show(start); 
-	while (true) {
-		int k = waitKey();
+    show(start);
+    
+    while (true) {
+    	int i = waitKey();
 
-		if(k==27) break;
-		else if(k >47 && k < 48+9) k='c';
+    	if (k=='q' || k== 27) return false;
 
-		switch(k) {
+    	if (i=='l') {
+    		while (label()) {}
+    	}
+    	switch(k) {
 			case 81: //left
-			prev();
-			break; 
+				prev();
+				break; 
 			case 83: //right
-			next();
-			break;  
-			case 10: //enter
-			case ' '://space
-			save();
-			break;
-			case 'd':
-			message = "Are you shure you want to delete this file?(y/N):";
-			draw();
-			if (waitKey(0)=='y') {
-			   delImg();
-			   next();
-			}
-			break;
-			case 'l':
-			case 'c':
-			case 9: //tab
-			label();
-			break;
-			default: 
-			next();
-			break;
+				next();
+				break;
 		}
-	}
+
+    }
+	
 }
 
 vector<path> getImgs(path p) {
@@ -120,7 +105,6 @@ void show(size_t i) {
 	if (doresize) {
 		double factor = 1088. / origImg.rows; 
 		resize(origImg, origImg, cv::Size(0,0), factor, factor, CV_INTER_LINEAR);
-
 	}
 
 	img=origImg.clone();
@@ -243,27 +227,18 @@ void draw() {
 }
 
 
-void label() {
-	while(true) {
+bool label() {
+
 		message = "press 0-9 for class id, r reset, s save, c cancel";
 		draw();
 		int k = waitKey(0);
-		if (k=='q' || k== 27) break;
+		if (k=='q' || k== 27) return false;
 
-		//reset classification. 
-		else if (k=='r') {
-			dets.clear();
-			draw();
-		}
-		//reset classification. 
-		else if (k=='n') {
-			dets.clear();
-			dets = net->detections;
-			message = "network results";
-			draw();
-		}
+		if (k=='|') k=0;
+
 		else if (k >47 && k < 48+classes.size()) {
 			int id=k-48;
+
 			message = classes[id];
 			draw();
 			
@@ -278,18 +253,52 @@ void label() {
 				draw();
 			}
 		}
-		else if(k=='s' || k == ' ') {
-			save();
-			break;
-		} 
-	}
+
+		switch(k) {
+			case 81: //left
+				prev();
+				break; 
+			case 83: //right
+				next();
+				break;
+			//save 
+			case 83: //right
+			case 10: //enter
+			case ' '://space
+			case 's':
+				save();
+				next();
+				break;
+			//reset boxing. 
+			case 'r':
+				dets.clear();
+				draw();
+				break;
+			//get from network 
+			case 'n':
+				dets.clear();
+				dets = net->detections;
+				message = "network results";
+				draw();
+			case 'd':
+				message = "Are you shure you want to delete this file?(y/N):";
+				draw();
+				if (waitKey(0)=='y') {
+				   delImg();
+				   next();
+				}
+				break;
+			default: 
+				return true;
+				break;
+		}
+		return true;
 }
 void save() {
 	copy_file(workPath/imgName, savePath/imgName, copy_option::overwrite_if_exists);
 	saveTxt(savePath/txtName);
 	message="labels saved.. ";
 	draw();
-	waitKey(600);
 }
 
 void saveTxt(path p) {			
