@@ -48,10 +48,11 @@ class Gandur
 public:
     Gandur();
     ~Gandur();
+
     bool Setup();
     bool Detect(
         const cv::Mat & inputMat,
-        float thresh,
+        float thresh=0,
         float tree_thresh=0.5);
 
     cv::Mat drawDetections();
@@ -74,8 +75,8 @@ private:
     float   **probs;
     network net;
     layer   l;
+    float   threshold;
     float   nms;
-    int     threshold;
     float   xScale;
     float   yScale;
 

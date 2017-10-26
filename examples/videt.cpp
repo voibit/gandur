@@ -23,8 +23,7 @@ int main(int argc, char** argv) {
     p = canonical(p).parent_path();
     if (!is_directory(p / "ok")) create_directory(p / "ok");
 	
-	Mat image = imread("./load.jpg",CV_LOAD_IMAGE_COLOR);
-    Mat srcImg;
+    Mat srcImg, image;
     std::vector<Rect> boxes;
     std::vector<int> compression_params;
     compression_params.push_back(IMWRITE_JPEG_QUALITY);
@@ -38,8 +37,6 @@ int main(int argc, char** argv) {
         std::cout << "Could not open file: "<< p << std::endl; 
         return -1;
     }
-
-    imshow("Gandur",image);
     namedWindow("Gandur",WINDOW_AUTOSIZE);
     moveWindow("Gandur",0,0);
     createTrackbar("seek","Gandur", &seeker, 100, setSeek);
@@ -47,20 +44,27 @@ int main(int argc, char** argv) {
     std::cout << "GANDUR YEAH!\n";
  
     //Gandur *net = new Gandur();
-    filename=filename.replace_extension("jpg");
+    filename.replace_extension("");
     std::string fname = filename.string(); 
     p/="ok"; 
     //get highest number in folder
     int i=0;
 
-    //destroyWindow("Loading");
+    //Find highest index of saved images 
     for(auto& entry : directory_iterator(p)) {
-    
-        std::string name = entry.path().filename().string();
-        int j = atoi(name.substr(0, name.find("_")).c_str());
-        std::string rest= name.substr(name.find("_")+1);
+        path readfile=entry.path();
+        readfile.replace_extension("");
 
-        if (j > i && fname==rest) i=j;
+        std::string name = readfile.filename().string();
+
+        int j = atoi(name.substr(name.find("_")+1).c_str());
+
+        std::string first = name.substr(0, name.find("_")-1);
+
+        std::cout << "filename:" << fname << std::endl; 
+        std::cout << "first:" << first << std::endl;
+
+        if (j > i && fname==first) i=j;
 
     }
     int frames = cap.get(CAP_PROP_FRAME_COUNT);
@@ -116,7 +120,7 @@ int main(int argc, char** argv) {
             }
             
             for (auto box : boxes) {
-                std::string newName=std::to_string(i)+"_"+fname;
+                std::string newName=fname+"_"+std::to_string(i)+".jpg";
                 std::cout <<"trying to save image... nr:" << i << ", " << newName<< "\n";
                 imwrite((p/newName).string(),srcImg(box),compression_params);
                 i++;

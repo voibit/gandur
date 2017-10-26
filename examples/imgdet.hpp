@@ -72,6 +72,7 @@ void loopImgs(size_t start) {
 			draw();
 			if (waitKey(0)=='y') {
 			   delImg();
+			   next();
 			}
 			break;
 			case 'l':
@@ -123,7 +124,7 @@ void show(size_t i) {
 	}
 
 	img=origImg.clone();
-	net->Detect(img,0.5);
+	net->Detect(img);
 
 	if (exists(savePath/imgName) && exists(savePath/txtName)) {
 		
