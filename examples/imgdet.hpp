@@ -54,7 +54,7 @@ void loopImgs(size_t start) {
     while (true) {
     	int i = waitKey();
 
-    	if (k=='q' || k== 27) return false;
+    	if (i=='q' || i== 27) return false;
 
     	if (i=='l') {
     		while (label()) {}
@@ -262,7 +262,6 @@ bool label() {
 				next();
 				break;
 			//save 
-			case 83: //right
 			case 10: //enter
 			case ' '://space
 			case 's':
