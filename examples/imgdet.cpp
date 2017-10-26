@@ -6,7 +6,7 @@ int main(int argc, char**argv){
 	workPath = argc>1 ? argv[1] : ".";
 	savePath = argc>2 ? argv[2] : workPath/"ok";
 
-	size_t start =  argc>3 ? atoi(argv[3]+1) : 0;
+	size_t start =  argc>3 ? atoi(argv[3])+1 : 0;
 	std::cout << start << std::endl; 
 
 	if (!is_directory(workPath)) {

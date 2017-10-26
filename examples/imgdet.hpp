@@ -216,10 +216,8 @@ bool label() {
 		draw();
 		int k = waitKey(0);
 		if (k=='q' || k== 27) return false;
-
 		if (k=='|') k=48;
-
-		else if (k >47 && k < 48+classes.size()) {
+		if (k > 47 && k < 48+classes.size()) {
 			int id=k-48;
 
 			message = classes[id];
