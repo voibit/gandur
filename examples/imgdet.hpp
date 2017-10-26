@@ -59,7 +59,7 @@ void loopImgs(size_t start) {
     	if (i=='l') {
     		while (label()) {}
     	}
-    	switch(k) {
+    	switch(i) {
 			case 81: //left
 				prev();
 				break; 
