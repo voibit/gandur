@@ -51,24 +51,7 @@ void loopImgs(size_t start) {
     moveWindow("Gandur",0,0);
     show(start);
     
-    while (true) {
-    	int i = waitKey();
-
-    	if (i=='q' || i== 27) break;
-
-    	if (i=='l') {
-    		while (label()) {}
-    	}
-    	switch(i) {
-			case 81: //left
-				prev();
-				break; 
-			case 83: //right
-				next();
-				break;
-		}
-
-    }
+    while (label()) {}
 	
 }
 
@@ -234,7 +217,7 @@ bool label() {
 		int k = waitKey(0);
 		if (k=='q' || k== 27) return false;
 
-		if (k=='|') k=0;
+		if (k=='|') k=48;
 
 		else if (k >47 && k < 48+classes.size()) {
 			int id=k-48;
