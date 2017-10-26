@@ -54,7 +54,7 @@ void loopImgs(size_t start) {
     while (true) {
     	int i = waitKey();
 
-    	if (i=='q' || i== 27) return false;
+    	if (i=='q' || i== 27) break;
 
     	if (i=='l') {
     		while (label()) {}
