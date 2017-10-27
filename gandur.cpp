@@ -38,6 +38,8 @@ bool Gandur::Setup() {
     char *networkFile = option_find_str(options, (char*)"networkcfg", (char*)"data/sea.cfg");
     char *weightsFile = option_find_str(options, (char*)"weights", (char*)"data/sea.weights");
 
+    threshold = option_find_float(options, (char*)"thresh", 0.5);
+
     if(!nameListFile){
         DPRINTF("No valid nameList file specified in options file [%s]!\n", CONFIG);
         return false;
@@ -107,7 +109,6 @@ bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float tree_thresh){
     int i, count=0;
     xScale=1;
     yScale=1;    
-    threshold = thresh;
     detections.clear();
 
     if(inputMat.empty()) {
@@ -134,7 +135,7 @@ bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float tree_thresh){
     split(floatMat, floatMatChannels);
     vconcat(floatMatChannels, floatMat);
 
-    __Detect((float*)floatMat.data, thresh, tree_thresh);
+    __Detect((float*)floatMat.data, thresh > 0 ? thresh:threshold, tree_thresh);
 
     return true;
 }
