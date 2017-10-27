@@ -13,7 +13,7 @@ gandur-debug: clean
 imgdet: clean-img
 	g++ examples/imgdet.cpp gandur.cpp $(ALL) -o imgdet
 videt: clean-vid
-	g++ examples/videt.cpp gandur.cpp $(ALL) -o videt
+	g++ examples/videt.cpp $(CVBOOST) -o videt
 trainlist: clean-trainlist 
 	g++ examples/trainlist.cpp $(CVBOOST) -o trainlist
 trainlist2: clean-trainlist2

@@ -1,8 +1,8 @@
 #ifndef _ENABLE_IMGDET
 #define _ENABLE_IMGDET
 
-#include "gandur.hpp"
 #include <boost/filesystem.hpp>
+#include "gandur.hpp"
 
 namespace Imgdet {
 
