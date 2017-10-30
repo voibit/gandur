@@ -1,6 +1,6 @@
-#include "gandur.hpp"
 #include <iostream>
 #include <boost/filesystem.hpp>
+#include <opencv2/opencv.hpp>
 
 using namespace cv;
 using namespace boost::filesystem;
@@ -8,12 +8,24 @@ using namespace boost::filesystem;
 int seeker = 0;
 bool seek = false;
 bool moveSeek = false;
+Mat boks;
 
 static void setSeek( int, void* )
 {
     if (!moveSeek) seek=true;
     else moveSeek = false;
 }
+
+static void on_mouse(int event, int x, int y, int flags, void* ){
+	if (event == CV_EVENT_LBUTTONDOWN)
+	{
+		std::cout << "@ Left mouse button pressed at: " << x << "," << y << std::endl;
+	//		icrop(x,y);
+	}
+	if (event == CV_EVENT_MOUSEMOVE){
+    }
+}
+
 
 int main(int argc, char** argv) {
 
@@ -118,7 +130,7 @@ int main(int argc, char** argv) {
             if (boxes.size()==0) {
                 boxes.push_back(Rect(0,0,image.cols,image.rows));
             }
-            
+					
             for (auto box : boxes) {
                 std::string newName=fname+"_"+std::to_string(i)+".jpg";
                 std::cout <<"trying to save image... nr:" << i << ", " << newName<< "\n";
@@ -134,7 +146,7 @@ int main(int argc, char** argv) {
         }
 
     } //detectionloop
-    EPRINTF("Cant read image / end of video..\n");
+    std::cout << "Cant read image / end of video..\n";
 
     //delete net;
     //net = 0;

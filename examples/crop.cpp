@@ -110,7 +110,8 @@ void makeRect(int x,int y, Mat &image){
 	if(y < (nety/2)) y = (nety/2);
 
 	Rect r = Rect(	min(x - (netx/2), currentImage.cols - (netx)),
-					min(y - (nety/2), currentImage.rows - (nety)),  netx, nety);
+	min(y - (nety/2), currentImage.rows - (nety)),  netx, nety);
+	
 	rectangle(image, r, 1, 8, 0);
 }
 
@@ -176,7 +177,8 @@ int main (int argc, char **argv)
 	while(true){
 
 		int k = waitKey(0);
-	    switch(k){
+		if (k = 27) break;
+	    	switch(k){
 			case 83:
 			std::cout << "NEXT!" << std::endl;
 			Next();
