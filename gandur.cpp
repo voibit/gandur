@@ -37,25 +37,26 @@ Gandur::~Gandur() {
     boxes = 0;
     probs = 0;
     classNames = 0;
-
-
 }
     
 bool Gandur::Setup() {
-    list *options = read_data_cfg(CONFIG);
-    char *nameListFile = option_find_str(options, (char*)"names", (char*)"data/names.list");
-    char *networkFile = option_find_str(options, (char*)"networkcfg", (char*)"data/sea.cfg");
-    char *weightsFile = option_find_str(options, (char*)"weights", (char*)"data/sea.weights");
-
-    threshold = option_find_float(options, (char*)"thresh", 0.5);
-
-    if(!nameListFile){
-        DPRINTF("No valid nameList file specified in options file [%s]!\n", CONFIG);
+    if(!boost::filesystem::exists("gandur.conf")) {
+        std::cout << "No config file found, exiting\n";
         return false;
     }
 
-    classNames = get_labels(nameListFile);
+    configFile=boost::filesystem::canonical("gandur.conf"); //get full path to config file
+    list *options = read_data_cfg((char *)configFile.string().c_str());
+    char *nameListFile = option_find_str(options, (char*)"names", (char*)"data/names.list");
+    char *networkFile = option_find_str(options, (char*)"networkcfg", (char*)"data/sea.cfg");
+    char *weightsFile = option_find_str(options, (char*)"weights", (char*)"data/sea.weights");
+    threshold = option_find_float(options, (char*)"thresh", 0.5);
 
+    if(!nameListFile){
+        DPRINTF("No valid nameList file specified in options file [%s]!\n", configFile.string().c_str());
+        return false;
+    }
+    classNames = get_labels(nameListFile);
     if(!classNames){
         DPRINTF("No valid class names specified in nameList file [%s]!\n", nameListFile);
         return false;
@@ -72,10 +73,9 @@ bool Gandur::Setup() {
     }    
     // Print some debug info
     net = parse_network_cfg(networkFile);
-
     DPRINTF("Setup: net.n = %d\n", net->n);   
     DPRINTF("net.layers[0].batch = %d\n", net->layers[0].batch);
-    
+
     load_weights(net, weightsFile);
     set_batch_network(net, 1);     
     l = net->layers[net->n-1];
@@ -141,7 +141,6 @@ bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float tree_thresh){
     if (inputRgb.rows != net->h || inputRgb.cols != net->w) { 
         inputRgb=resizeKeepAspectRatio(inputRgb, cv::Size(net->w, net->h), cv::Scalar(128, 128,128));
     }
-
     inputRgb.convertTo(floatMat, CV_32FC3, 1/255.0);
 
     // Get the image to suit darknet
@@ -167,7 +166,8 @@ std::string Gandur::getLabel(const unsigned int id) {
     }
     else return "error";
 }
-    
+
+//convert to letterbox image.
 cv::Mat Gandur::resizeKeepAspectRatio(
     const cv::Mat &input,
     const cv::Size &dstSize,
@@ -184,12 +184,10 @@ cv::Mat Gandur::resizeKeepAspectRatio(
         cv::resize( input, output, cv::Size(w2, dstSize.height));
         xScale=dstSize.width / w2;
     }
-
     int top = (dstSize.height-output.rows) / 2;
     int down = (dstSize.height-output.rows+1) / 2;
     int left = (dstSize.width - output.cols) / 2;
     int right = (dstSize.width - output.cols+1) / 2;
-
     cv::copyMakeBorder(output, output, top, down, left, right, cv::BORDER_CONSTANT, bgcolor );
 
     return output;
@@ -233,27 +231,39 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
             tmp.label= std::string(classNames[class1]);
             tmp.prob=prob;
             tmp.labelId=class1;
-            tmp.box.width=(double)image.cols* boxes[i].w*xScale;
-            tmp.box.height=(double)image.rows* boxes[i].h*yScale;
+            tmp.box=ptoia(image.cols, image.rows, boxes[i]);
 
-            //convert x and y from letterbox to actual coordinates
-            tmp.box.x =image.cols* (boxes[i].x * xScale - ((xScale-1)/2.)) -tmp.box.width/2;
-            tmp.box.y =image.rows* (boxes[i].y * yScale - ((yScale-1)/2.)) - tmp.box.height/2;
-
-            DPRINTF("Object:%s w:%ipx h%ipx \n w:%f h:%f x:%f y:%f", tmp.label.c_str(), image.cols, image.rows, boxes[i].w, boxes[i].h,boxes[i].x, boxes[i].y);
-            DPRINTF("\n w:%i h:%i x:%i y:%i\n", tmp.box.width, tmp.box.height, tmp.box.x, tmp.box.y);
+            //DPRINTF("Object:%s w:%ipx h%ipx \n w:%f h:%f x:%f y:%f", tmp.label.c_str(), image.cols, image.rows, boxes[i].w, boxes[i].h,boxes[i].x, boxes[i].y);
+            //DPRINTF("\n w:%i h:%i x:%i y:%i\n", tmp.box.width, tmp.box.height, tmp.box.x, tmp.box.y);
             detections.push_back(tmp);
-
-
         }
-
+        /*
         //print all propabilities
         for(size_t j = 0; j < l.classes; j++) {
-            if (probs[i][j] > 0.2) {
+            
+            if (probs[i][j] > 0.1) {
                 printf("%s: %.0f%%\n", classNames[j], probs[i][j]*100);
-
             }
         }
-
+        */
     }
+}
+//convert darknet box to cv rect & keep aspectratio. 
+cv::Rect Gandur::ptoia(const int &width, const int &height, const box &b) {
+            cv::Rect box;
+
+            box.width = (double)width* b.w*xScale;
+            box.height = (double)height* b.h*yScale;
+
+            //todo clean up to use only one var for scale?. 
+            box.x = width* (b.x * xScale - ((xScale-1)/2.)) -box.width/2;
+            box.y = height* (b.y * yScale - ((yScale-1)/2.)) - box.height/2;
+            
+            /*
+            box.width = (double)width* b.w;
+            box.height = (double)height* b.h;
+            box.x = b.x*width - box.width/2;
+            box.y = b.y*height- box.height/2;
+            */
+    return box;
 }

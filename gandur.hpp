@@ -26,6 +26,8 @@
 #include "region_layer.h"
 #include "option_list.h"
 
+#include <boost/filesystem.hpp>
+
 #ifdef _DEBUG
 #define DPRINTF printf
 #define EPRINTF printf
@@ -33,8 +35,6 @@
 #define DPRINTF
 #define EPRINTF printf
 #endif
-
-static char CONFIG[] = "/home/ed15/test/gandur/gandur.conf"; 
 
 struct Detection {
     std::string label;
@@ -67,6 +67,7 @@ public:
     int getLabelId(const std::string &name);
     std::string getLabel(const unsigned int id);
     std::vector<std::string> getClasses();
+    cv::Rect ptoia(const int &width, const int &height, const box &b);
 
 private:
     cv::Mat image; 
@@ -80,7 +81,7 @@ private:
     float **masks;
     float   xScale;
     float   yScale;
-
+    boost::filesystem::path configFile;
     void __Detect(float* inData, float thresh, float tree_thresh);
 };
 

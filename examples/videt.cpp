@@ -1,5 +1,8 @@
-#include "gandur.hpp"
+//#include "gandur.hpp"
 #include <iostream>
+#include <string>
+#include <vector>
+#include <opencv2/opencv.hpp>
 #include <boost/filesystem.hpp>
 
 using namespace cv;
@@ -134,7 +137,7 @@ int main(int argc, char** argv) {
         }
 
     } //detectionloop
-    EPRINTF("Cant read image / end of video..\n");
+    std::cout << "Cant read image / end of video..\n";
 
     //delete net;
     //net = 0;
