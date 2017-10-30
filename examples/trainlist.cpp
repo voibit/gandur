@@ -7,8 +7,6 @@
 using namespace boost::filesystem;
 using std::string, std::vector, std::cout, std::endl;
 
-
-
 int crc(const string& my_string) {
     boost::crc_ccitt_type result;
     result.process_bytes(my_string.data(), my_string.length());
@@ -42,20 +40,22 @@ void writeList(const path &p, const vector<string> &list) {
 
 int main(int argc, char **argv) {
 
-
 	vector<string> train;
 	vector<string> valid;
-
 
 	path dirsfile="./data/traindirs.txt";
 	path trainlist="../darknet/trainlist.txt";
 	path validlist="../darknet/validlist.txt";
+	float prob = 0.09;
 
 	if (argc>1) dirsfile=argv[1];
-	if (argc==3) trainlist=argv[2];
+	if (argc>2) trainlist=argv[2];
+	if (argc>3) trainlist=argv[3];
+	if (argc>4) prob=atof(argv[4]);
 
 	//read trainlist
 	if (!exists(dirsfile)) {
+		cout << "./trainlist dirsfile trainfile validfile validprob\n";
 		cout << "dirsfile: "<<dirsfile<<" does not exist.." <<endl;
 		return -1;
 	}
@@ -70,20 +70,19 @@ int main(int argc, char **argv) {
 	}
 	file.close(); 
 
-	if (dirs.size()>0) cout << "looping through it.." << endl;
-	else {
-		cout <<"no dirs in file.."<<endl;
+	if (dirs.size()==0) {
+		cout <<"no dirs in dirfile.. "<<endl;
 		return -1;
 	}
+	cout << "looping through it.." << endl;
 
 	for (string dir: dirs) {
 		for (auto entry : directory_iterator(dir)) {
 			if(checkFile(entry.path()) ) {
 				string imgpath = canonical(entry).string();
-				if (isValid(imgpath, 0.1)) valid.push_back(imgpath);
+				if (isValid(imgpath, prob)) valid.push_back(imgpath);
 				else train.push_back(imgpath);
 			}	
-
 		}
 	}
 	writeList(trainlist, train); 
