@@ -34,7 +34,7 @@
 #define EPRINTF printf
 #endif
 
-static char CONFIG[] = "/home/ed15/gandur/gandur.conf"; 
+static char CONFIG[] = "/home/ed15/test/gandur/gandur.conf"; 
 
 struct Detection {
     std::string label;
@@ -73,10 +73,11 @@ private:
     box     *boxes;
     char    **classNames;
     float   **probs;
-    network net;
+    network *net;
     layer   l;
     float   threshold;
     float   nms;
+    float **masks;
     float   xScale;
     float   yScale;
 

@@ -13,6 +13,7 @@ Gandur::Gandur() {
     net = {};
     nms = 0.4;  //TODO: figure out what this is.... 
     threshold = 0;
+    masks = 0;
     setlocale(LC_NUMERIC,"C");
     Setup();
 }
@@ -27,9 +28,17 @@ Gandur::~Gandur() {
         }
         free(classNames);
     }
+    if (l.coords > 4){
+        masks = (float**)calloc(l.w*l.h*l.n, sizeof(float*));
+        for(int j = 0; j < l.w*l.h*l.n; ++j) free(masks[j]);
+        free(masks);
+    }
+    masks=0;
     boxes = 0;
     probs = 0;
     classNames = 0;
+
+
 }
     
 bool Gandur::Setup() {
@@ -64,17 +73,22 @@ bool Gandur::Setup() {
     // Print some debug info
     net = parse_network_cfg(networkFile);
 
-    DPRINTF("Setup: net.n = %d\n", net.n);   
-    DPRINTF("net.layers[0].batch = %d\n", net.layers[0].batch);
+    DPRINTF("Setup: net.n = %d\n", net->n);   
+    DPRINTF("net.layers[0].batch = %d\n", net->layers[0].batch);
     
-    load_weights(&net, weightsFile);
-    set_batch_network(&net, 1);     
-    l = net.layers[net.n-1];
+    load_weights(net, weightsFile);
+    set_batch_network(net, 1);     
+    l = net->layers[net->n-1];
     DPRINTF("Setup: layers = %d, %d, %d\n", l.w, l.h, l.n); 
-    DPRINTF("Image expected w,h = [%d][%d]!\n", net.w, net.h);            
+    DPRINTF("Image expected w,h = [%d][%d]!\n", net->w, net->h);            
     
     boxes = (box*)calloc(l.w*l.h*l.n, sizeof(box));
     probs = (float**)calloc(l.w*l.h*l.n, sizeof(float *));
+
+    if (l.coords > 4){
+        masks = (float**)calloc(l.w*l.h*l.n, sizeof(float*));
+        for(int j = 0; j < l.w*l.h*l.n; ++j) masks[j] = (float*)calloc(l.coords-4, sizeof(float));
+    }
     
     // Error exits
     if(!boxes || !probs) {
@@ -113,8 +127,8 @@ bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float tree_thresh){
 
     if(inputMat.empty()) {
         EPRINTF("Error in inputImage! [bgr = %d, w = %d, h = %d]\n",
-            !inputMat.data, inputMat.cols != net.w,
-            inputMat.rows != net.h);
+            !inputMat.data, inputMat.cols != net->w,
+            inputMat.rows != net->h);
         return false;
     }
 
@@ -124,8 +138,8 @@ bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float tree_thresh){
     // Convert the bytes to float
     cv::Mat floatMat;
 
-    if (inputRgb.rows != net.h || inputRgb.cols != net.w) { 
-        inputRgb=resizeKeepAspectRatio(inputRgb, cv::Size(net.w, net.h), cv::Scalar(128, 128,128));
+    if (inputRgb.rows != net->h || inputRgb.cols != net->w) { 
+        inputRgb=resizeKeepAspectRatio(inputRgb, cv::Size(net->w, net->h), cv::Scalar(128, 128,128));
     }
 
     inputRgb.convertTo(floatMat, CV_32FC3, 1/255.0);
@@ -194,18 +208,8 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
     // Predict
     network_predict(net, inData);
 
-    /* for latest commit
-    float **masks = 0;
-    if (l.coords > 4){
-        masks = (float*)calloc(l.w*l.h*l.n, sizeof(float*));
-        for(int j = 0; j < l.w*l.h*l.n; ++j) masks[j] = (float)calloc(l.coords-4, sizeof(float *));
-    
-    get_region_boxes(l, 1, 1,net.w, net.h, thresh, probs, boxes, masks, 0, 0, tree_thresh,1);
-
-    }
-    */
-    get_region_boxes(l, 1, 1,net.w, net.h, thresh, probs, boxes, 0, 0, tree_thresh,1);
-
+    // for latest commit
+    get_region_boxes(l, 1, 1,net->w, net->h, thresh, probs, boxes, masks, 0, 0, tree_thresh,1);
 
     DPRINTF("l.softmax_tree = %p, nms = %f\n", l.softmax_tree, nms);
     if (l.softmax_tree && nms)
@@ -239,6 +243,17 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
             DPRINTF("Object:%s w:%ipx h%ipx \n w:%f h:%f x:%f y:%f", tmp.label.c_str(), image.cols, image.rows, boxes[i].w, boxes[i].h,boxes[i].x, boxes[i].y);
             DPRINTF("\n w:%i h:%i x:%i y:%i\n", tmp.box.width, tmp.box.height, tmp.box.x, tmp.box.y);
             detections.push_back(tmp);
+
+
         }
+
+        //print all propabilities
+        for(size_t j = 0; j < l.classes; j++) {
+            if (probs[i][j] > 0.2) {
+                printf("%s: %.0f%%\n", classNames[j], probs[i][j]*100);
+
+            }
+        }
+
     }
 }
