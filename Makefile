@@ -11,17 +11,21 @@ gandur: clean
 gandur-debug: clean
 	g++ examples/main.cpp gandur.cpp -DGPU -D_DEBUG $(ALL) -o gandur
 imgdet: clean-img
-	g++ examples/imgdet.cpp gandur.cpp $(ALL) -o imgdet
+	g++ examples/imgdet.cpp C $(ALL) -o imgdet
 videt: clean-vid
 	g++ examples/videt.cpp $(CVBOOST) -o videt
 trainlist: clean-trainlist 
 	g++ examples/trainlist.cpp $(CVBOOST) -o trainlist
 crop: clean-crop
-	g++ examples/crop.cpp -L /usr/local/lib $(CVBOOST) -o crop
+	g++ examples/crop.cpp $(CVBOOST) -o crop
 changeClass: clean-changeClass
 	g++ examples/changeClass.cpp $(ALL) -o changeClass
 small: clean-small
 	g++ examples/small.cpp $(CVBOOST) -o small
+valid: clean-valid
+	g++ examples/validate.cpp gandur.cpp $(ALL) -o valid
+	g++ examples/validate1.cpp gandur.cpp $(ALL) -o valid1
+
 
 clean:
 	rm -rf ./gandur
@@ -37,5 +41,6 @@ clean-changeClass:
 	rm -rf ./changeClass
 clean-small:
 	rm -rf ./small
-
-
+clean-valid:
+	rm -rf ./valid
+	rm -rf ./valid1
