@@ -12,7 +12,7 @@ Gandur::Gandur() {
     l = {};
     net = {};
     nms = 0.4;  //TODO: figure out what this is.... 
-    threshold = 0;
+    thresh = 0;
     masks = 0;
     setlocale(LC_NUMERIC,"C");
     Setup();
@@ -33,24 +33,25 @@ Gandur::~Gandur() {
         for(int j = 0; j < l.w*l.h*l.n; ++j) free(masks[j]);
         free(masks);
     }
-    masks=0;
+    masks = 0;
     boxes = 0;
     probs = 0;
     classNames = 0;
 }
     
 bool Gandur::Setup() {
-    if(!boost::filesystem::exists("gandur.conf")) {
-        std::cout << "No config file found, exiting\n";
+    if(!exists("gandur.conf")) {
+        cout << "No config file found, exiting\n";
         return false;
     }
 
-    configFile=boost::filesystem::canonical("gandur.conf"); //get full path to config file
-    list *options = read_data_cfg((char *)configFile.string().c_str());
+    configFile=canonical("gandur.conf"); //get full path to config file
+    options = read_data_cfg((char *)configFile.string().c_str());
     char *nameListFile = option_find_str(options, (char*)"names", (char*)"data/names.list");
-    char *networkFile = option_find_str(options, (char*)"networkcfg", (char*)"data/sea.cfg");
+    networkFile = option_find_str(options, (char*)"networkcfg", (char*)"data/sea.cfg");
     char *weightsFile = option_find_str(options, (char*)"weights", (char*)"data/sea.weights");
-    threshold = option_find_float(options, (char*)"thresh", 0.5);
+    thresh = option_find_float(options, (char*)"thresh", 0.5);
+
 
     if(!nameListFile){
         DPRINTF("No valid nameList file specified in options file [%s]!\n", configFile.string().c_str());
@@ -73,11 +74,14 @@ bool Gandur::Setup() {
     }    
     // Print some debug info
     net = parse_network_cfg(networkFile);
+
     DPRINTF("Setup: net.n = %d\n", net->n);   
     DPRINTF("net.layers[0].batch = %d\n", net->layers[0].batch);
 
     load_weights(net, weightsFile);
-    set_batch_network(net, 1);     
+    set_batch_network(net, 1);
+    net->subdivisions=1;  
+    
     l = net->layers[net->n-1];
     DPRINTF("Setup: layers = %d, %d, %d\n", l.w, l.h, l.n); 
     DPRINTF("Image expected w,h = [%d][%d]!\n", net->w, net->h);            
@@ -118,11 +122,8 @@ clean_exit:
     return false;
 }
 
-bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float tree_thresh){
-    image = inputMat;
-    int i, count=0;
-    xScale=1;
-    yScale=1;    
+bool Gandur::Detect(cv::Mat inputMat,float thrs, float tree_thresh){
+    img = inputMat.clone();
     detections.clear();
 
     if(inputMat.empty()) {
@@ -132,70 +133,169 @@ bool Gandur::Detect(const cv::Mat &inputMat,float thresh, float tree_thresh){
         return false;
     }
 
+    if (inputMat.rows != net->h || inputMat.cols != net->w) { 
+        inputMat=resizeLetterbox(inputMat);
+    }
+
+    __Detect((float*)bgrToFloat(inputMat).data, thrs > 0 ? thrs:thresh, tree_thresh);
+    return true;
+}
+
+cv::Mat Gandur::bgrToFloat(const cv::Mat &inputMat) {
     //Convert to rgb
     cv::Mat inputRgb;
     cvtColor(inputMat, inputRgb, CV_BGR2RGB);
     // Convert the bytes to float
     cv::Mat floatMat;
-
-    if (inputRgb.rows != net->h || inputRgb.cols != net->w) { 
-        inputRgb=resizeKeepAspectRatio(inputRgb, cv::Size(net->w, net->h), cv::Scalar(128, 128,128));
-    }
     inputRgb.convertTo(floatMat, CV_32FC3, 1/255.0);
-
     // Get the image to suit darknet
-    std::vector<cv::Mat> floatMatChannels(3);
+    vector<cv::Mat> floatMatChannels(3);
     split(floatMat, floatMatChannels);
     vconcat(floatMatChannels, floatMat);
-
-    __Detect((float*)floatMat.data, thresh > 0 ? thresh:threshold, tree_thresh);
-
-    return true;
+    return floatMat;
 }
 
-int Gandur::getLabelId(const std::string &name) {
+int Gandur::getLabelId(const string &name) {
 
     for (size_t i = 0; i < l.classes; i++) {
-        if (std::string(classNames[i]) == name) return i;         
+        if (string(classNames[i]) == name) return i;         
     }
     return -1; 
 }
-std::string Gandur::getLabel(const unsigned int id) {
+string Gandur::getLabel(const unsigned int id) {
     if (id < l.classes) {
-        return std::string(classNames[id]);
+        return string(classNames[id]);
     }
     else return "error";
 }
 
 //convert to letterbox image.
-cv::Mat Gandur::resizeKeepAspectRatio(
-    const cv::Mat &input,
-    const cv::Size &dstSize,
-    const cv::Scalar &bgcolor){
+cv::Mat Gandur::resizeLetterbox(const cv::Mat &input) {
 
     cv::Mat output;
+    cv::Size dstSize(net->w, net->h);
+    cv::Scalar bgcolor(128, 128,128);
 
     double h1 = dstSize.width * (input.rows/(double)input.cols);
     double w2 = dstSize.height * (input.cols/(double)input.rows);
     if( h1 <= dstSize.height) {
         cv::resize( input, output, cv::Size(dstSize.width, h1));
-        yScale=dstSize.height / h1;
     } else {
         cv::resize( input, output, cv::Size(w2, dstSize.height));
-        xScale=dstSize.width / w2;
     }
     int top = (dstSize.height-output.rows) / 2;
     int down = (dstSize.height-output.rows+1) / 2;
     int left = (dstSize.width - output.cols) / 2;
     int right = (dstSize.width - output.cols+1) / 2;
-    cv::copyMakeBorder(output, output, top, down, left, right, cv::BORDER_CONSTANT, bgcolor );
+    cv::copyMakeBorder(output, output, top, down, left, right, cv::BORDER_CONSTANT, bgcolor);
 
     return output;
 }
 
-std::vector<std::string> Gandur::getClasses() {
-    std::vector<std::string> v(classNames, classNames+l.classes);
+vector<string> Gandur::getClasses() {
+    vector<string> v(classNames, classNames+l.classes);
     return v;
+}
+
+bool Gandur::validate() {
+
+    string cfgname=path(string(networkFile)).filename().replace_extension("").string();
+    path validfile = string(option_find_str(options, (char*)"valid", (char*)"../darknet/valid.txt"));
+    path backupdir = string(option_find_str(options, (char*)"backup", (char*)"/backup/"));
+    float iou_thresh = option_find_float(options, (char*)"iou-thresh", 0.5);
+
+    if(!exists(validfile)) {
+        cout << "Valid file not found. please specyfy in conf\n"; 
+        return 0; 
+    }
+    if(!exists(backupdir)) {
+        cout << "backup dir not found. please specyfy in conf\n"; 
+        return 0; 
+    }
+    vector<path> weights;
+    vector<path> imgs; 
+    /*
+    //fill weights vector; 
+    for(auto &entry : directory_iterator(backupdir)) {
+        path filename=entry.path().filename();
+        if (filename.extension()==".weights") {
+        
+            //check if weights name is the same as cfg name
+            string name =filename.string();
+            if (name.substr(0, name.find('_')) == cfgname) {
+                weights.push_back( (backupdir/filename).string() );
+            }    
+        }
+    }
+    sort(weights.begin(), weights.end());
+    */
+    for (int i = 1000; i < 200000; i+=1000) {
+        path wname = cfgname+"_"+std::to_string(i)+".weights";
+        if (exists( backupdir / wname )) {
+            weights.push_back(backupdir / wname);
+        } 
+    }
+
+    //fill image vector
+    ifstream file(validfile);
+    string fname;
+    while (std::getline(file, fname)) {
+        imgs.push_back(path(fname));
+    }
+    file.close();
+
+    ofstream ofile(path(cfgname+".csv"));
+    char delim =',';
+
+    ofile << "Weight" << delim<< "IOU" << delim << "mAP\n";  
+    cout << "Weight\tIOU\tmAP\n";  
+
+    for (path weight : weights) {
+
+        int total = 0;
+        int correct = 0;
+        int proposals = 0;
+        float avg_iou = 0;
+     
+        load_weights(net, (char*)weight.string().c_str());
+
+        for (path p : imgs) {
+            img = cv::imread(p.string());
+            cv::Mat sized=resizeLetterbox(img);
+            
+            //Read box from labelfile
+            p.replace_extension(".txt");
+            int num_labels = 0;
+            box_label *truth = read_boxes((char *)p.string().c_str(), &num_labels);
+
+            //Predict probs and boxes from weights
+            network_predict(net, (float*)bgrToFloat(sized).data );
+            get_region_boxes(l, img.cols, img.rows, net->w, net->h, thresh, probs, boxes, 0, 1, 0, .5, 1);
+            if (nms) do_nms(boxes, probs, l.w*l.h*l.n, 1, nms);
+
+            //Loop every object in image 
+            for (int j = 0; j < num_labels; ++j) {
+            ++total;
+            box t = {truth[j].x, truth[j].y, truth[j].w, truth[j].h};
+
+            float best_iou = 0;
+            for(int k = 0; k < l.w*l.h*l.n; ++k){
+                float iou = box_iou(boxes[k], t);
+                if(probs[k][truth[j].id] > thresh && iou > best_iou){
+                    best_iou = iou;
+                }
+            }
+            avg_iou += best_iou;
+            if(best_iou > iou_thresh){
+                ++correct;
+            }
+        }//NUM LABELS LOOP
+
+    } //img loop
+    ofile << weight.filename() << delim<< avg_iou*100/total << delim<< 100.*correct/total << std::endl;
+    cout << weight.filename() << "\t Avg iou:"<< avg_iou*100/total << "\t mAP:"<< 100.*correct/total << std::endl; 
+    } // weights loop
+    ofile.close();
 }
 
 //////////////////////////////////////////////////////////////////
@@ -207,7 +307,7 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
     network_predict(net, inData);
 
     // for latest commit
-    get_region_boxes(l, 1, 1,net->w, net->h, thresh, probs, boxes, masks, 0, 0, tree_thresh,1);
+    get_region_boxes(l, img.cols, img.rows,net->w, net->h, thresh, probs, boxes, masks, 0, 0, tree_thresh,1);
 
     DPRINTF("l.softmax_tree = %p, nms = %f\n", l.softmax_tree, nms);
     if (l.softmax_tree && nms)
@@ -225,16 +325,11 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
 
         if (prob > thresh){
 
-            DPRINTF("\nX:%f, Y:%f xscale:%f, yscale%f\n",boxes[i].x, boxes[i].y,xScale, yScale);
             Detection tmp;
-
-            tmp.label= std::string(classNames[class1]);
+            tmp.label= string(classNames[class1]);
             tmp.prob=prob;
             tmp.labelId=class1;
-            tmp.box=ptoia(image.cols, image.rows, boxes[i]);
-
-            //DPRINTF("Object:%s w:%ipx h%ipx \n w:%f h:%f x:%f y:%f", tmp.label.c_str(), image.cols, image.rows, boxes[i].w, boxes[i].h,boxes[i].x, boxes[i].y);
-            //DPRINTF("\n w:%i h:%i x:%i y:%i\n", tmp.box.width, tmp.box.height, tmp.box.x, tmp.box.y);
+            tmp.box=ptoi(img.cols, img.rows, boxes[i]);
             detections.push_back(tmp);
         }
         /*
@@ -249,21 +344,13 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
     }
 }
 //convert darknet box to cv rect & keep aspectratio. 
-cv::Rect Gandur::ptoia(const int &width, const int &height, const box &b) {
+cv::Rect Gandur::ptoi(const int &width, const int &height, const box &b) {
             cv::Rect box;
 
-            box.width = (double)width* b.w*xScale;
-            box.height = (double)height* b.h*yScale;
-
-            //todo clean up to use only one var for scale?. 
-            box.x = width* (b.x * xScale - ((xScale-1)/2.)) -box.width/2;
-            box.y = height* (b.y * yScale - ((yScale-1)/2.)) - box.height/2;
-            
-            /*
             box.width = (double)width* b.w;
             box.height = (double)height* b.h;
-            box.x = b.x*width - box.width/2;
-            box.y = b.y*height- box.height/2;
-            */
+            box.x = b.x*width - box.width/2.;
+            box.y = b.y*height- box.height/2.;
+        
     return box;
 }

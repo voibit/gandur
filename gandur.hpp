@@ -36,8 +36,15 @@
 #define EPRINTF printf
 #endif
 
+
+using namespace boost::filesystem;
+using std::cout;
+using std::endl;
+using std::string;
+using std::vector; 
+
 struct Detection {
-    std::string label;
+    string label;
     unsigned int labelId; 
     float prob;
     cv::Rect box;
@@ -50,39 +57,34 @@ public:
     ~Gandur();
 
     bool Setup();
-    bool Detect(
-        const cv::Mat & inputMat,
-        float thresh=0,
-        float tree_thresh=0.5);
+    bool Detect(cv::Mat inputMat,float thresh=0, float tree_thresh=0.5);
 
-    cv::Mat drawDetections();
+    cv::Mat resizeLetterbox(const cv::Mat &input);
 
-    cv::Mat resizeKeepAspectRatio(
-        const cv::Mat &input,
-        const cv::Size &dstSize,
-        const cv::Scalar &bgcolor);
+    cv::Mat bgrToFloat(const cv::Mat &inputMat);
 
-    std::vector<Detection> detections;
+    vector<Detection> detections;
 
-    int getLabelId(const std::string &name);
-    std::string getLabel(const unsigned int id);
-    std::vector<std::string> getClasses();
-    cv::Rect ptoia(const int &width, const int &height, const box &b);
+    int getLabelId(const string &name);
+    string getLabel(const unsigned int id);
+    vector<string> getClasses();
+    cv::Rect ptoi(const int &width, const int &height, const box &b);
+    bool validate();
 
 private:
-    cv::Mat image; 
+    cv::Mat img; 
     box     *boxes;
     char    **classNames;
     float   **probs;
     network *net;
     layer   l;
-    float   threshold;
+    float   thresh;
     float   nms;
     float **masks;
-    float   xScale;
-    float   yScale;
     boost::filesystem::path configFile;
     void __Detect(float* inData, float thresh, float tree_thresh);
+    list *options;
+    char *networkFile;
 };
 
 #endif // _ENABLE_GANDUR
