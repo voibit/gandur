@@ -26,9 +26,6 @@ int main(int argc, char**argv){
 	}
 	classes = net->getClasses();
 
-
 	loopImgs(start);
 	return 0; 
 }
-
-
