@@ -1,15 +1,4 @@
 #include "gandur.hpp"
-#include <string>
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-#include <opencv2/core/utility.hpp>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <chrono>
-#include "Http_server.hpp"
-#include <vector> 
 
 using namespace cv;
 
@@ -49,7 +38,7 @@ Mat drawDetections(Mat img, std::vector<Detection> &dets) {
         
         //Draw line from bottom 
         Point posCircle = Point(det.box.x+det.box.width/2, det.box.y+det.box.height);
-        Point posDegree = Point(det.box.x, det.box.y+det.box.height+14);
+        //Point posDegree = Point(det.box.x, det.box.y+det.box.height+14);
         
         // Draw sircle and line
         circle(img, posCircle, 4, cvScalar(50, 255, 200), 2);
@@ -76,29 +65,30 @@ Mat drawDetections(Mat img, std::vector<Detection> &dets) {
     return img;
 }
 
-bool ext(const std::string file, std::string ext) {
-	if (file.substr(file.find_last_of(".") + 1) == ext) {
-		return true;
-	}
-	else return false;
+bool ext(const std::string &file,const std::string &ext) {
+    return file.substr(file.find_last_of('.') + 1) == ext;
 }
 
 int main(int argn, char** argv) {
     std::vector<Detection> dets;
+
+    if (argn < 2) {
+        cout << "./gandur mediafile\n";
+        return -1;
+
+    }
 	std::string file = argv[1];
-	Gandur *net = new Gandur();
+	auto *net = new Gandur();
 	Mat image; 
 
 	VideoCapture cap ( file );
     if( ! cap.isOpened () )  
     {
         EPRINTF("Could not load the AV file %s\n", file.c_str());
-        if(net) delete net;
-        net = 0;
         return -1;
     }
 
-    while(1) {
+    while(true) {
         dets.clear();
     	if(cap.read(image)) {
 
@@ -107,7 +97,7 @@ int main(int argn, char** argv) {
 
     	imshow("Gandur",drawDetections(image,dets));
 
-        char k = waitKey(
+        int k = waitKey(
             ext(file, "jpg") ||
             ext(file, "JPG") ||
             ext(file, "JPE") ||
@@ -120,9 +110,6 @@ int main(int argn, char** argv) {
 	    }
 
     } //detectionloop
-
-    if(net) delete net;
-    net = 0;
 
 	return 0;
 }

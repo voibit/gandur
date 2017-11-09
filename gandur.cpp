@@ -6,14 +6,14 @@
 #include "gandur.hpp"
 
 Gandur::Gandur() {
-    boxes = 0;
-    probs = 0;
-    classNames = 0;
+    boxes = nullptr;
+    probs = nullptr;
+    classNames = nullptr;
     l = {};
     net = {};
     nms = 0.4;  //TODO: figure out what this is.... 
     thresh = 0;
-    masks = 0;
+    masks = nullptr;
     setlocale(LC_NUMERIC,"C");
     Setup();
 }
@@ -33,10 +33,10 @@ Gandur::~Gandur() {
         for(int j = 0; j < l.w*l.h*l.n; ++j) free(masks[j]);
         free(masks);
     }
-    masks = 0;
-    boxes = 0;
-    probs = 0;
-    classNames = 0;
+    masks = nullptr;
+    boxes = nullptr;
+    probs = nullptr;
+    classNames = nullptr;
 }
     
 bool Gandur::Setup() {
@@ -89,9 +89,11 @@ bool Gandur::Setup() {
     boxes = (box*)calloc(l.w*l.h*l.n, sizeof(box));
     probs = (float**)calloc(l.w*l.h*l.n, sizeof(float *));
 
+    size_t j;
+
     if (l.coords > 4){
         masks = (float**)calloc(l.w*l.h*l.n, sizeof(float*));
-        for(int j = 0; j < l.w*l.h*l.n; ++j) masks[j] = (float*)calloc(l.coords-4, sizeof(float));
+        for(j = 0; j < l.w*l.h*l.n; ++j) masks[j] = (float*)calloc(l.coords-4, sizeof(float));
     }
     
     // Error exits
@@ -117,8 +119,8 @@ clean_exit:
         free(boxes);
     if(probs)
         free_ptrs((void **)probs, l.w*l.h*l.n);
-    boxes = NULL;
-    probs = NULL;
+    boxes = nullptr;
+    probs = nullptr;
     return false;
 }
 
@@ -162,7 +164,7 @@ int Gandur::getLabelId(const string &name) {
     }
     return -1; 
 }
-string Gandur::getLabel(const unsigned int id) {
+string Gandur::getLabel(const unsigned int &id) {
     if (id < l.classes) {
         return string(classNames[id]);
     }
@@ -206,11 +208,11 @@ bool Gandur::validate() {
 
     if(!exists(validfile)) {
         cout << "Valid file not found. please specyfy in conf\n"; 
-        return 0; 
+        return false;
     }
     if(!exists(backupdir)) {
         cout << "backup dir not found. please specyfy in conf\n"; 
-        return 0; 
+        return false;
     }
     vector<path> weights;
     vector<path> imgs; 
@@ -254,7 +256,6 @@ bool Gandur::validate() {
     for (path weight : weights) {
 
         int wrong = 0;
-        int extra = 0;
         int total = 0;
         int correct = 0;
         float avg_iou = 0;
@@ -278,7 +279,7 @@ bool Gandur::validate() {
 
             //Predict probs and boxes from weights
             network_predict(net, (float*)bgrToFloat(sized).data );
-            get_region_boxes(l, img.cols, img.rows, net->w, net->h, thresh, probs, boxes, masks, 0, 0, .5, 1);
+            get_region_boxes(l, img.cols, img.rows, net->w, net->h, thresh, probs, boxes, masks, 0, nullptr, .5, 1);
 
             if (l.softmax_tree && nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
             else if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
@@ -289,7 +290,6 @@ bool Gandur::validate() {
             ++total;
             box t = {truth[j].x, truth[j].y, truth[j].w, truth[j].h};
 
-            bool  wrongb = false;
             std::stringstream  ss;
 
             for(int k = 0; k < l.w*l.h*l.n; ++k){
@@ -310,7 +310,7 @@ bool Gandur::validate() {
                         ++correct;
                         avg_iou+=iou;
                     }
-                    if(!wrongb && prob > .5){
+                    if(prob > .5){
                         ++c50;
                         if(prob > .7){
                             ++c70;
@@ -346,7 +346,7 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
     network_predict(net, inData);
 
     // for latest commit
-    get_region_boxes(l, img.cols, img.rows,net->w, net->h, thresh, probs, boxes, masks, 0, 0, tree_thresh,1);
+    get_region_boxes(l, img.cols, img.rows,net->w, net->h, thresh, probs, boxes, masks, 0, nullptr, tree_thresh,1);
 
     DPRINTF("l.softmax_tree = %p, nms = %f\n", l.softmax_tree, nms);
     if (l.softmax_tree && nms)
@@ -386,10 +386,10 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
 cv::Rect Gandur::ptoi(const int &width, const int &height, const box &b) {
             cv::Rect box;
 
-            box.width = (double)width* b.w;
-            box.height = (double)height* b.h;
-            box.x = b.x*width - box.width/2.;
-            box.y = b.y*height- box.height/2.;
+            box.width = (int)(width * b.w);
+            box.height = (int)(height * b.h);
+            box.x = (int)(b.x*width - box.width/2.);
+            box.y = (int)(b.y*height- box.height/2.);
         
     return box;
 }

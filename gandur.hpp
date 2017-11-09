@@ -1,10 +1,7 @@
 /*************************************************************************
  * Gandur                                                                *
- *                                                                       *
- * C++ API for Yolo v2 (Detection)                                       *
- *                                                                       *                                                                      *
+ * C++ API for Yolo v2 (Detection)                                       *                                                                   *
  * Forked from, https://github.com/prabindh/darknet                      *
- *                                                                       *
  *************************************************************************/
 
 #ifndef _ENABLE_GANDUR
@@ -66,7 +63,7 @@ public:
     vector<Detection> detections;
 
     int getLabelId(const string &name);
-    string getLabel(const unsigned int id);
+    string getLabel(const unsigned int &id);
     vector<string> getClasses();
     cv::Rect ptoi(const int &width, const int &height, const box &b);
     bool validate();
