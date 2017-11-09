@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 
 	if (argc>1) dirsfile=argv[1];
 	if (argc>2) trainlist=argv[2];
-	if (argc>3) trainlist=argv[3];
+	if (argc>3) validlist=argv[3];
 	if (argc>4) prob=atof(argv[4]);
 
 	//read trainlist

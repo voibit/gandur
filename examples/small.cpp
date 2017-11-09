@@ -177,14 +177,15 @@ int main(int argc, char**argv){
 					path filename(std::to_string(nr++));
 					filename.replace_extension(".jpg");
 
-					//save(savepath/filename,newImg,classes,nboxes);
+					save(savepath/filename,newImg,classes,nboxes);
 
-					
+					/*
 					for (auto nbox : nboxes) {
 						rectangle(newImg, nbox,CV_RGB(100, 200, 255), 1, 8, 0);
 					}
 					imshow("Saving..",newImg);
 					waitKey(0);
+					*/
 					
 				}
 

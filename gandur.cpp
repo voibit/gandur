@@ -245,19 +245,27 @@ bool Gandur::validate() {
     file.close();
 
     ofstream ofile(path(cfgname+".csv"));
+    
     char delim =',';
 
-    ofile << "Weight" << delim<< "IOU" << delim << "mAP\n";  
+    ofile << "Weight" << delim<< "IOU" << delim << "mAP"+std::to_string((int)(thresh*100))<< delim << "mAP 50"<< delim << "mAP 70"<< delim << "mAP 90" << delim << "wrong\n";  
     cout << "Weight\tIOU\tmAP\n";  
 
     for (path weight : weights) {
 
+        int wrong = 0;
+        int extra = 0;
         int total = 0;
         int correct = 0;
-        int proposals = 0;
         float avg_iou = 0;
+        int c50=0;
+        int c70=0;
+        int c90=0;
      
         load_weights(net, (char*)weight.string().c_str());
+
+        ofstream ofilee(weight.replace_extension("error.csv"));
+        ofilee << "file" << delim <<"boxnr" <<delim << "classification[true-proposed]"<< endl;
 
         for (path p : imgs) {
             img = cv::imread(p.string());
@@ -270,30 +278,61 @@ bool Gandur::validate() {
 
             //Predict probs and boxes from weights
             network_predict(net, (float*)bgrToFloat(sized).data );
-            get_region_boxes(l, img.cols, img.rows, net->w, net->h, thresh, probs, boxes, 0, 1, 0, .5, 1);
-            if (nms) do_nms(boxes, probs, l.w*l.h*l.n, 1, nms);
+            get_region_boxes(l, img.cols, img.rows, net->w, net->h, thresh, probs, boxes, masks, 0, 0, .5, 1);
+
+            if (l.softmax_tree && nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+            else if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
 
             //Loop every object in image 
             for (int j = 0; j < num_labels; ++j) {
+
             ++total;
             box t = {truth[j].x, truth[j].y, truth[j].w, truth[j].h};
 
-            float best_iou = 0;
+            bool  wrongb = false;
+            std::stringstream  ss;
+
             for(int k = 0; k < l.w*l.h*l.n; ++k){
+
                 float iou = box_iou(boxes[k], t);
-                if(probs[k][truth[j].id] > thresh && iou > best_iou){
-                    best_iou = iou;
+                float prob = probs[k][truth[j].id];
+                int maxindex=max_index(probs[k], l.classes);
+                float maxprob =probs[k][maxindex];
+
+                if(maxprob > thresh && iou > iou_thresh){  //passer på at boksen stemmer overens med orginalen
+                    //Check if other class for same box has a higher propability.
+                    if (maxindex != truth[j].id) {
+                        ss.clear();
+                        ++wrong;
+                        ofilee << p <<delim << j << delim <<classNames[truth[j].id]<<" "<<prob*100<<"%"<<classNames[maxindex]<<" "<<maxprob*100<<"%\n";
+                    }
+                    else {
+                        ++correct;
+                        avg_iou+=iou;
+                    }
+                    if(!wrongb && prob > .5){
+                        ++c50;
+                        if(prob > .7){
+                            ++c70;
+                            if(prob > .9) ++c90;
+                        }
+                    }
                 }
+                /*extra detections. 
+                else if (maxprob > thresh) {
+                
+                }
+                */
             }
-            avg_iou += best_iou;
-            if(best_iou > iou_thresh){
-                ++correct;
-            }
+
         }//NUM LABELS LOOP
 
     } //img loop
-    ofile << weight.filename() << delim<< avg_iou*100/total << delim<< 100.*correct/total << std::endl;
-    cout << weight.filename() << "\t Avg iou:"<< avg_iou*100/total << "\t mAP:"<< 100.*correct/total << std::endl; 
+    ofile << weight.filename() << delim<< avg_iou*100/total << delim<< 100.*correct/total<< delim;
+    ofile << 100.*c50/total <<delim << 100.*c70/total<<delim<< 100.*c90/total  <<  delim << 100.*wrong/total << std::endl;
+    cout << weight.filename() << "\t Avg iou:"<< avg_iou*100/total << "\t mAP:"<< 100.*correct/total << std::endl;
+    
+    ofilee.close();
     } // weights loop
     ofile.close();
 }
