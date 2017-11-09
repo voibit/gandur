@@ -63,7 +63,6 @@ int main(int argc, char **argv) {
 	}
 
 	ifstream file(dirsfile);
-	s
 	vector<string> dirs;
 	string line;
 
