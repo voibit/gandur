@@ -1,13 +1,13 @@
 //#include "gandur.hpp"
 #include <iostream>
-#include <string>
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include <boost/filesystem.hpp>
 
 using namespace cv;
 using namespace boost::filesystem;
-using std::cout, std::endl;
+using std::cout;
+using std::endl;
 
 int seeker = 0;
 bool seek = false;
@@ -99,8 +99,8 @@ int main(int argc, char** argv) {
         //image = net->drawDetections();
         
         for (auto box : boxes) {
-            rectangle(image, box, CV_RGB(255,0,0),2);  
-        } 
+            rectangle(image, box, CV_RGB(255, 0, 0), 2);
+        }
 
     	imshow("Gandur",image);
         int k = waitKey(10);
@@ -146,15 +146,9 @@ int main(int argc, char** argv) {
         else if(k=='f') {
             std::cout << cap.get(CV_CAP_PROP_POS_FRAMES) << std::endl;
         }
-        else if(k=='s') {
-            //cvSetCaptureProperty(cap,)
-        }
 
     } //detectionloop
     std::cout << "Cant read image / end of video..\n";
-
-    //delete net;
-    //net = 0;
 
 	return 0;
 }

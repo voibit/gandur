@@ -1,6 +1,6 @@
 /*************************************************************************
- * Gandur                                                                *
- * C++ API for Yolo v2 (Detection)                                       *                                                                   *
+ * Gandur, https://github.com/voibit/gandu                               *
+ * C++ API for Yolo v2                                                   *                                                                   *
  * Forked from arapaho, https://github.com/prabindh/darknet              *
  *************************************************************************/
 #include "gandur.hpp"
@@ -52,7 +52,6 @@ bool Gandur::Setup() {
     char *weightsFile = option_find_str(options, (char*)"weights", (char*)"data/sea.weights");
     thresh = option_find_float(options, (char*)"thresh", 0.5);
 
-
     if(!nameListFile){
         DPRINTF("No valid nameList file specified in options file [%s]!\n", configFile.string().c_str());
         return false;
@@ -62,7 +61,7 @@ bool Gandur::Setup() {
         DPRINTF("No valid class names specified in nameList file [%s]!\n", nameListFile);
         return false;
     }
-    int j;
+
     // Early exits
     if(!networkFile) {
         EPRINTF("No cfg file specified!\n");
@@ -80,12 +79,13 @@ bool Gandur::Setup() {
 
     load_weights(net, weightsFile);
     set_batch_network(net, 1);
-    net->subdivisions=1;  
-    
+
+    net->subdivisions = 1;
+    //Set detection layer
     l = net->layers[net->n-1];
-    DPRINTF("Setup: layers = %d, %d, %d\n", l.w, l.h, l.n); 
-    DPRINTF("Image expected w,h = [%d][%d]!\n", net->w, net->h);            
-    
+
+    DPRINTF("Setup: layers = %d, %d, %d\n", l.w, l.h, l.n);
+    DPRINTF("Image expected w,h = [%d][%d]!\n", net->w, net->h);
     boxes = (box*)calloc(l.w*l.h*l.n, sizeof(box));
     probs = (float**)calloc(l.w*l.h*l.n, sizeof(float *));
 
@@ -199,19 +199,25 @@ vector<string> Gandur::getClasses() {
     return v;
 }
 
-bool Gandur::validate() {
+bool Gandur::validate(path backupdir, path validfile) {
 
     string cfgname=path(string(networkFile)).filename().replace_extension("").string();
-    path validfile = string(option_find_str(options, (char*)"valid", (char*)"../darknet/valid.txt"));
-    path backupdir = string(option_find_str(options, (char*)"backup", (char*)"/backup/"));
     float iou_thresh = option_find_float(options, (char*)"iou-thresh", 0.5);
+
+    if (validfile == "") {
+        validfile = string(option_find_str(options, (char *) "valid", (char *) "../darknet/valid.txt"));
+    }
 
     if(!exists(validfile)) {
         cout << "Valid file not found. please specyfy in conf\n"; 
         return false;
     }
+
+    if (backupdir == "") {
+        backupdir = string(option_find_str(options, (char *) "backup", (char *) "/backup/"));
+    }
     if(!exists(backupdir)) {
-        cout << "backup dir not found. please specyfy in conf\n"; 
+        cout << "backup dir not found. please specify in conf\n";
         return false;
     }
     vector<path> weights;
@@ -231,11 +237,16 @@ bool Gandur::validate() {
     }
     sort(weights.begin(), weights.end());
     */
-    for (int i = 1000; i < 200000; i+=1000) {
-        path wname = cfgname+"_"+std::to_string(i)+".weights";
-        if (exists( backupdir / wname )) {
-            weights.push_back(backupdir / wname);
-        } 
+
+    if (is_regular_file(backupdir)) {
+        weights.push_back(backupdir);
+    } else {
+        for (int i = 1000; i < 200000; i += 1000) {
+            path wname = cfgname + "_" + std::to_string(i) + ".weights";
+            if (exists(backupdir / wname)) {
+                weights.push_back(backupdir / wname);
+            }
+        }
     }
 
     //fill image vector
@@ -324,9 +335,7 @@ bool Gandur::validate() {
                 }
                 */
             }
-
         }//NUM LABELS LOOP
-
     } //img loop
     ofile << weight.filename() << delim<< avg_iou*100/total << delim<< 100.*correct/total<< delim;
     ofile << 100.*c50/total <<delim << 100.*c70/total<<delim<< 100.*c90/total  <<  delim << 100.*wrong/total << std::endl;
@@ -342,19 +351,13 @@ bool Gandur::validate() {
 //////////////////////////////////////////////////////////////////
 void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
     int i;
-    // Predict
     network_predict(net, inData);
-
-    // for latest commit
     get_region_boxes(l, img.cols, img.rows,net->w, net->h, thresh, probs, boxes, masks, 0, nullptr, tree_thresh,1);
 
+    //Sorter boxer elns.
     DPRINTF("l.softmax_tree = %p, nms = %f\n", l.softmax_tree, nms);
-    if (l.softmax_tree && nms)
-    {
-        do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-    }
-    else if (nms)
-        do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+    if (l.softmax_tree && nms)do_nms_obj(boxes, probs, l.w * l.h * l.n, l.classes, nms);
+    else if (nms) do_nms_sort(boxes, probs, l.w * l.h * l.n, l.classes, nms);
 
     // Update object counts
     for (i = 0; i < (l.w*l.h*l.n); ++i){

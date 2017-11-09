@@ -1,11 +1,13 @@
 #include <iostream>
-#include <string>
 #include <boost/filesystem.hpp>
 #include <boost/crc.hpp>
 #include <cmath>
 
 using namespace boost::filesystem;
-using std::string, std::vector, std::cout, std::endl;
+using std::string;
+using std::vector;
+using std::cout;
+using std::endl;
 
 int crc(const string& my_string) {
     boost::crc_ccitt_type result;
@@ -77,7 +79,7 @@ int main(int argc, char **argv) {
 	cout << "looping through it.." << endl;
 
 	for (string dir: dirs) {
-		for (auto entry : directory_iterator(dir)) {
+        for (auto &entry : directory_iterator(dir)) {
 			if(checkFile(entry.path()) ) {
 				string imgpath = canonical(entry).string();
 				if (isValid(imgpath, prob)) valid.push_back(imgpath);

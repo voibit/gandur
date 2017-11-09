@@ -1,12 +1,11 @@
 
 #include <boost/filesystem.hpp>
-#include <string>
-#include <vector>
 #include <opencv2/opencv.hpp>
 
 using namespace boost::filesystem;
-using namespace cv; 
-using std::string, std::vector;
+using namespace cv;
+using std::string;
+using std::vector;
 
 struct Detection {
     std::string label;
@@ -170,7 +169,6 @@ int main(int argc, char**argv){
 							
 							nboxes.push_back(nbox);
 							classes.push_back(dets[j].labelId);
-
 						}
 
 					}

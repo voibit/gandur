@@ -1,19 +1,19 @@
 /*************************************************************************
- * Gandur                                                                *
- * C++ API for Yolo v2 (Detection)                                       *                                                                   *
- * Forked from, https://github.com/prabindh/darknet                      *
+ * Gandur, https://github.com/voibit/gandu                               *
+ * C++ API for Yolo v2                                                   *                                                                   *
+ * Forked from arapaho, https://github.com/prabindh/darknet              *
  *************************************************************************/
-
 #ifndef _ENABLE_GANDUR
 #define _ENABLE_GANDUR
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <locale.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <clocale>
 #include <string>
 #include <vector>
 #include <opencv2/opencv.hpp>
+#include <boost/filesystem.hpp>
 #include "network.h"
 #include "detection_layer.h"
 #include "cost_layer.h"
@@ -23,8 +23,6 @@
 #include "region_layer.h"
 #include "option_list.h"
 
-#include <boost/filesystem.hpp>
-
 #ifdef _DEBUG
 #define DPRINTF printf
 #define EPRINTF printf
@@ -32,7 +30,6 @@
 #define DPRINTF
 #define EPRINTF printf
 #endif
-
 
 using namespace boost::filesystem;
 using std::cout;
@@ -66,7 +63,8 @@ public:
     string getLabel(const unsigned int &id);
     vector<string> getClasses();
     cv::Rect ptoi(const int &width, const int &height, const box &b);
-    bool validate();
+
+    bool validate(path backupdir, path validfile);
 
 private:
     cv::Mat img; 
