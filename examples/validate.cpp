@@ -67,7 +67,7 @@ bool Valid::validate(path backupdir, path validfile) {
     ifstream file(validfile);
     string fname;
     while (std::getline(file, fname)) {
-        imgs.emplace_back(path(fname));
+        imgs.emplace_back(fname);
     }
     file.close();
 
@@ -155,6 +155,7 @@ bool Valid::validate(path backupdir, path validfile) {
         } //img loop
 
         //remove last .error.csv from filename
+        ofilee.close();
         weight.replace_extension("").replace_extension("");
         ofile << weight.filename() << delim << avg_iou * 100 / total << delim << 100. * correct / total << delim;
         ofile << 100. * c50 / total << delim << 100. * c70 / total << delim << 100. * c90 / total << delim
@@ -162,7 +163,7 @@ bool Valid::validate(path backupdir, path validfile) {
         cout << weight.filename() << "\t Avg iou:" << avg_iou * 100 / total << "\t mAP:" << 100. * correct / total
              << std::endl;
 
-        ofilee.close();
+        
     } // weights loop
     ofile.close();
 }

@@ -93,12 +93,23 @@ void loopImgs(size_t start) {
 
 vector<path> getImgs(const path &p) {
 	vector<path> tmp;
-	for (auto &entry : directory_iterator(p)) {
-		imgName = entry.path().filename();
-		if (isImg(imgName)) {
-			tmp.push_back(p / imgName);
+
+	if(is_regular_file(p)) (
+	    ifstream file(validfile);
+	    string fname;
+	    while (std::getline(file, fname)) {
+	        if (ïsImg(imgName)) tmp.push_back(path(fname));
+	    }
+	    file.close();
+	)
+	else {
+		for (auto &entry : directory_iterator(p)) {
+			imgName = entry.path().filename();
+			if (isImg(imgName)) tmp.push_back(p / imgName);
 		}
+
 	}
+
 
 	sort(tmp.begin(), tmp.end());
 	return tmp;
