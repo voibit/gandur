@@ -37,6 +37,20 @@ using std::endl;
 using std::string;
 using std::vector;
 
+class Cfg {
+public:
+    Cfg();
+
+    path names;
+    path weights;
+    path netCfg;
+    path tree;
+    float thresh;
+    float treeThresh;
+
+    bool check();
+};
+
 class Detection {
 public:
     string label;
@@ -45,7 +59,6 @@ public:
     cv::Rect box;
 
     Detection() : label(""), labelId(0), prob(0) {}
-
     Detection(const int &id, const string &l, const float &p, const cv::Rect &b)
             : label(l), labelId(id), prob(p), box(b) {}
 };
@@ -56,9 +69,7 @@ public:
     Gandur();
     ~Gandur();
 
-    bool Setup();
-    bool Detect(cv::Mat inputMat,float thresh=0, float tree_thresh=0.5);
-
+    bool Detect(cv::Mat inputMat, float thresh = 0, float tree_thresh = 0);
     cv::Mat resizeLetterbox(const cv::Mat &input);
     cv::Mat bgrToFloat(const cv::Mat &inputMat);
     vector<Detection> detections;
@@ -67,18 +78,26 @@ public:
     cv::Rect ptoi(const int &width, const int &height, const box &b);
 
 protected:
+    Cfg cfg;
     cv::Mat img; 
     box     *boxes;
     char    **classNames;
     float   **probs;
     network *net;
     layer   l;
-    float   thresh;
     float   nms;
     float **masks;
-    boost::filesystem::path configFile;
     list *options;
-    char *networkFile;
+
+    bool loadCfg(path p);
+
+    bool loadCfg() { loadCfg(""); }
+
+    void loadWeights(path p);
+
+    bool loadVars();
+
+    unsigned int nboxes;
 
 private:
     void __Detect(float *inData, float thresh, float tree_thresh);

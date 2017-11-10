@@ -8,28 +8,25 @@ public:
 int main(int argc, char **argv) {
 	path p(argc > 1 ? argv[1] : "");
 	path validlist(argc > 2 ? argv[2] : "");
-
     auto *net = new Valid();
 
 	net->validate(p, validlist);
 	return 0;
 }
 
-
 bool Valid::validate(path backupdir, path validfile) {
 
-    string cfgname = path(string(networkFile)).filename().replace_extension("").string();
+    path cfgname = cfg.netCfg.filename();
+    cfgname.replace_extension("");
     float iou_thresh = option_find_float(options, (char *) "iou-thresh", 0.5);
 
     if (is_empty(validfile)) {
-        validfile = string(option_find_str(options, (char *) "valid", (char *) "../darknet/valid.txt"));
+        validfile = option_find_str(options, (char *) "valid", (char *) "../darknet/valid.txt");
     }
-
-    if (!exists(validfile)) {
+    if (!is_regular_file(validfile)) {
         cout << "Valid file not found. please specyfy in conf\n";
         return false;
     }
-
     if (is_empty(backupdir)) {
         backupdir = string(option_find_str(options, (char *) "backup", (char *) "/backup/"));
     }
@@ -59,7 +56,7 @@ bool Valid::validate(path backupdir, path validfile) {
         weights.push_back(backupdir);
     } else {
         for (int i = 1000; i < 200000; i += 1000) {
-            path wname = cfgname + "_" + std::to_string(i) + ".weights";
+            path wname = cfgname.string() + "_" + std::to_string(i) + ".weights";
             if (exists(backupdir / wname)) {
                 weights.push_back(backupdir / wname);
             }
@@ -74,11 +71,12 @@ bool Valid::validate(path backupdir, path validfile) {
     }
     file.close();
 
-    ofstream ofile(path(cfgname + ".csv"));
+    ofstream ofile(cfgname.replace_extension(".csv"));
 
     char delim = ',';
 
-    ofile << "Weight" << delim << "IOU" << delim << "mAP" + std::to_string((int) (thresh * 100)) << delim << "mAP 50"
+    ofile << "Weight" << delim << "IOU" << delim << "mAP" + std::to_string((int) (cfg.thresh * 100)) << delim
+          << "mAP 50"
           << delim << "mAP 70" << delim << "mAP 90" << delim << "wrong\n";
     cout << "Weight\tIOU\tmAP\n";
 
@@ -92,7 +90,7 @@ bool Valid::validate(path backupdir, path validfile) {
         int c70 = 0;
         int c90 = 0;
 
-        load_weights(net, (char *) weight.c_str());
+        loadWeights(weight);
 
         ofstream ofilee(weight.replace_extension("error.csv"));
         ofilee << "file" << delim << "boxnr" << delim << "classification[true-proposed]" << endl;
@@ -108,7 +106,7 @@ bool Valid::validate(path backupdir, path validfile) {
 
             //Predict probs and boxes from weights
             network_predict(net, (float *) bgrToFloat(sized).data);
-            get_region_boxes(l, img.cols, img.rows, net->w, net->h, thresh, probs, boxes, masks, 0, nullptr, .5, 1);
+            get_region_boxes(l, img.cols, img.rows, net->w, net->h, cfg.thresh, probs, boxes, masks, 0, nullptr, .5, 1);
 
             //if (l.softmax_tree && nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
             //else if
@@ -129,7 +127,7 @@ bool Valid::validate(path backupdir, path validfile) {
                     int maxindex = max_index(probs[k], l.classes);
                     float maxprob = probs[k][maxindex];
 
-                    if (maxprob > thresh && iou > iou_thresh) {  //passer på at boksen stemmer overens med orginalen
+                    if (maxprob > cfg.thresh && iou > iou_thresh) {  //passer på at boksen stemmer overens med orginalen
                         //Check if other class for same box has a higher propability.
                         if (maxindex != truth[j].id) {
                             ss.clear();
