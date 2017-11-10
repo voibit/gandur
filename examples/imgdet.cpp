@@ -12,12 +12,12 @@ string message;
 size_t count = 0;
 size_t current = 0;
 
-vector<path> getImgs(path p);
+vector<path> getImgs(const path &p);
 
 bool doresize = true;
 
 
-Gandur *net = 0;
+Gandur *net = nullptr;
 path imgName;
 path txtName;
 path workPath;
@@ -57,7 +57,7 @@ int main(int argc, char**argv){
 	workPath = argc>1 ? argv[1] : ".";
 	savePath = argc>2 ? argv[2] : workPath/"ok";
 
-	size_t start =  argc>3 ? atoi(argv[3])+1 : 0;
+	int start = argc > 3 ? atoi(argv[3]) + 1 : 0;
 	std::cout << start << std::endl; 
 
 	if (!is_directory(workPath)) {
@@ -91,7 +91,7 @@ void loopImgs(size_t start) {
 
 }
 
-vector<path> getImgs(path p) {
+vector<path> getImgs(const path &p) {
 	vector<path> tmp;
 	for (auto &entry : directory_iterator(p)) {
 		imgName = entry.path().filename();
@@ -142,7 +142,7 @@ void show(size_t i) {
 
 	} else {
 		dets = net->detections;
-		if (dets.size() > 0) message = "Network results";
+		if (!dets.empty()) message = "Network results";
 		else message = "No detections";
 	}
 	draw();
@@ -173,7 +173,6 @@ bool isImg(path p) {
 	ret |= ext == ".JPEG";
 	ret |= ext == ".png";
 	ret |= ext == ".PNG";
-
 	ret |= ext == ".bmp";
 	ret |= ext == ".BMP";
 	return ret;
@@ -191,10 +190,10 @@ void readTxt(path p) {
 		std::istringstream ss(line);
 		ss >> id >> x >> y >> w >> h;
 
-		W = w * img.cols;
-		H = h * img.rows;
-		X = x * img.cols - W / 2;
-		Y = y * img.rows - H / 2;
+		W = (int) w * img.cols;
+		H = (int) h * img.rows;
+		X = (int) (x * img.cols - W / 2.);
+		Y = (int) (y * img.rows - H / 2.);
 		det.box = Rect(X, Y, W, H);
 		det.labelId = id;
 		if (net) det.label = net->getLabel(id);

@@ -35,13 +35,19 @@ using namespace boost::filesystem;
 using std::cout;
 using std::endl;
 using std::string;
-using std::vector; 
+using std::vector;
 
-struct Detection {
+class Detection {
+public:
     string label;
-    unsigned int labelId; 
+    int labelId;
     float prob;
     cv::Rect box;
+
+    Detection() : label(""), labelId(0), prob(0) {}
+
+    Detection(const int &id, const string &l, const float &p, const cv::Rect &b)
+            : label(l), labelId(id), prob(p), box(b) {}
 };
 
 class Gandur
@@ -54,19 +60,13 @@ public:
     bool Detect(cv::Mat inputMat,float thresh=0, float tree_thresh=0.5);
 
     cv::Mat resizeLetterbox(const cv::Mat &input);
-
     cv::Mat bgrToFloat(const cv::Mat &inputMat);
-
     vector<Detection> detections;
-
-    int getLabelId(const string &name);
     string getLabel(const unsigned int &id);
     vector<string> getClasses();
     cv::Rect ptoi(const int &width, const int &height, const box &b);
 
-    bool validate(path backupdir, path validfile);
-
-private:
+protected:
     cv::Mat img; 
     box     *boxes;
     char    **classNames;
@@ -77,9 +77,13 @@ private:
     float   nms;
     float **masks;
     boost::filesystem::path configFile;
-    void __Detect(float* inData, float thresh, float tree_thresh);
     list *options;
     char *networkFile;
+
+private:
+    void __Detect(float *inData, float thresh, float tree_thresh);
+
+
 };
 
 #endif // _ENABLE_GANDUR

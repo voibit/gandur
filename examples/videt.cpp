@@ -53,7 +53,6 @@ int main(int argc, char** argv) {
     p/="ok"; 
     //get highest number in folder
     int i=0;
-
     //Find highest index of saved images 
     for(auto& entry : directory_iterator(p)) {
         path readfile=entry.path();
