@@ -69,15 +69,16 @@ bool Gandur::loadVars() {
     //DPRINTF("Image expected w,h = [%d][%d]!\n", net->w, net->h);
     size_t j;
     net = parse_network_cfg((char *) cfg.netCfg.c_str());
+    //Set layer to detection layer
     l = net->layers[net->n - 1];
     //DPRINTF("Setup: net.n = %d\n", net->n);
     //DPRINTF("net.layers[0].batch = %d\n", net->layers[0].batch);
     loadWeights(cfg.weights);
 
-    //speed up detection, other values are used only in training.
+    //so you dont have to change config from trainig.
     set_batch_network(net, 1);
     net->subdivisions = 1;
-    //Set detection layer
+
     //Set boxes;
     nboxes = (unsigned int) (l.w * l.h * l.n);
     boxes = (box *) calloc(nboxes, sizeof(box));
@@ -117,9 +118,6 @@ bool Gandur::Detect(cv::Mat inputMat, float thresh, float tree_thresh) {
     detections.clear();
 
     if(inputMat.empty()) {
-        EPRINTF("Error in inputImage! [bgr = %d, w = %d, h = %d]\n",
-            !inputMat.data, inputMat.cols != net->w,
-            inputMat.rows != net->h);
         return false;
     }
 
@@ -127,13 +125,13 @@ bool Gandur::Detect(cv::Mat inputMat, float thresh, float tree_thresh) {
         inputMat=resizeLetterbox(inputMat);
     }
     //Convert to darknet image format, and run detections.
-    __Detect((float *) bgrToFloat(inputMat).data,
+    __Detect(bgrToFloat(inputMat),
              thresh == 0 ? cfg.thresh : thresh,
              tree_thresh == 0 ? cfg.treeThresh : tree_thresh);
     return true;
 }
 
-cv::Mat Gandur::bgrToFloat(const cv::Mat &inputMat) {
+float *Gandur::bgrToFloat(const cv::Mat &inputMat) {
     //Convert to rgb
     cv::Mat inputRgb;
     cvtColor(inputMat, inputRgb, CV_BGR2RGB);
@@ -144,7 +142,7 @@ cv::Mat Gandur::bgrToFloat(const cv::Mat &inputMat) {
     vector<cv::Mat> floatMatChannels(3);
     split(floatMat, floatMatChannels);
     vconcat(floatMatChannels, floatMat);
-    return floatMat;
+    return (float*) floatMat.data;
 }
 
 string Gandur::getLabel(const unsigned int &id) {

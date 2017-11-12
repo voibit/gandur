@@ -10,10 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <clocale>
-#include <string>
-#include <vector>
-#include <opencv2/opencv.hpp>
-#include <boost/filesystem.hpp>
+
 #include "network.h"
 #include "detection_layer.h"
 #include "cost_layer.h"
@@ -22,6 +19,12 @@
 #include "box.h"
 #include "region_layer.h"
 #include "option_list.h"
+
+#include <string>
+#include <vector>
+#include <opencv2/opencv.hpp>
+#include <boost/filesystem.hpp>
+
 
 #ifdef _DEBUG
 #define DPRINTF printf
@@ -40,14 +43,12 @@ using std::vector;
 class Cfg {
 public:
     Cfg();
-
     path names;
     path weights;
     path netCfg;
     path tree;
     float thresh;
     float treeThresh;
-
     bool check();
 };
 
@@ -71,16 +72,13 @@ public:
 
     bool Detect(cv::Mat inputMat, float thresh = 0, float tree_thresh = 0);
     cv::Mat resizeLetterbox(const cv::Mat &input);
-    cv::Mat bgrToFloat(const cv::Mat &inputMat);
+    float *bgrToFloat(const cv::Mat &inputMat);
     vector<Detection> detections;
     string getLabel(const unsigned int &id);
     vector<string> getClasses();
     cv::Rect ptoi(const int &width, const int &height, const box &b);
-
     void setThresh(const float &f);
-
     void setTreeThresh(const float &f);
-
     void loadWeights(path p);
 
 protected:
@@ -96,16 +94,13 @@ protected:
     list *options;
 
     bool loadCfg(path p);
-
     bool loadCfg() { loadCfg(""); }
-
     bool loadVars();
 
     unsigned int nboxes;
 
 private:
     void __Detect(float *inData, float thresh, float tree_thresh);
-
 
 };
 

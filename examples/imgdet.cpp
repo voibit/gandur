@@ -64,9 +64,7 @@ int main(int argc, char**argv){
 		std::cout <<"Error: "<<workPath<< " is not a directory. "<< std::endl;
 		return -1;  
 	}
-	if (!is_directory(savePath)) create_directory(savePath);
 	workPath=canonical(workPath);
-	savePath=canonical(savePath);
 
 	net = new Gandur(); 
 	imgs = getImgs(workPath); 
@@ -75,6 +73,10 @@ int main(int argc, char**argv){
 		std::cout <<"Error: "<<workPath<<" contains no images. "<< std::endl;
 		return -1;
 	}
+	if (!is_directory(savePath)) create_directory(savePath);
+
+	savePath=canonical(savePath);
+	
 	classes = net->getClasses();
 
 	loopImgs(start);
@@ -324,7 +326,7 @@ bool label() {
 }
 
 void save() {
-	copy_file(workPath / imgName, savePath / imgName, copy_option::overwrite_if_exists);
+	//copy_file(workPath / imgName, savePath / imgName, copy_option::overwrite_if_exists);
 	saveTxt(savePath / txtName);
 	message = "labels saved.. ";
 	draw();

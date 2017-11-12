@@ -6,10 +6,11 @@ public:
 };
 
 int main(int argc, char **argv) {
-	path p(argc > 1 ? argv[1] : "");
+	path p(argc > 1 ? argv[1] : ".");
 	path validlist(argc > 2 ? argv[2] : "");
-    auto *net = new Valid();
 
+    //cuda_set_device(1);
+    auto *net = new Valid();
 	net->validate(p, validlist);
 	return 0;
 }
@@ -20,7 +21,7 @@ bool Valid::validate(path backupdir, path validfile) {
     cfgname.replace_extension("");
     float iou_thresh = option_find_float(options, (char *) "iou-thresh", 0.5);
 
-    if (is_empty(validfile)) {
+    if (validfile=="") {
         validfile = option_find_str(options, (char *) "valid", (char *) "../darknet/valid.txt");
     }
     if (!is_regular_file(validfile)) {
@@ -105,7 +106,7 @@ bool Valid::validate(path backupdir, path validfile) {
             box_label *truth = read_boxes((char *) p.c_str(), &num_labels);
 
             //Predict probs and boxes from weights
-            network_predict(net, (float *) bgrToFloat(sized).data);
+            network_predict(net, bgrToFloat(sized));
             get_region_boxes(l, img.cols, img.rows, net->w, net->h, cfg.thresh, probs, boxes, masks, 0, nullptr, .5, 1);
 
             //if (l.softmax_tree && nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
