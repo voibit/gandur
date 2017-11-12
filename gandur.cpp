@@ -270,3 +270,11 @@ bool Cfg::check() {
     }
     return ret;
 }
+
+void Gandur::setThresh(const float &f) {
+    cfg.thresh = f;
+}
+
+void Gandur::setTreeThresh(const float &f) {
+    cfg.treeThresh = f;
+}

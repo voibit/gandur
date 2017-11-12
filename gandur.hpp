@@ -77,6 +77,12 @@ public:
     vector<string> getClasses();
     cv::Rect ptoi(const int &width, const int &height, const box &b);
 
+    void setThresh(const float &f);
+
+    void setTreeThresh(const float &f);
+
+    void loadWeights(path p);
+
 protected:
     Cfg cfg;
     cv::Mat img; 
@@ -92,8 +98,6 @@ protected:
     bool loadCfg(path p);
 
     bool loadCfg() { loadCfg(""); }
-
-    void loadWeights(path p);
 
     bool loadVars();
 

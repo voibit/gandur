@@ -94,14 +94,14 @@ void loopImgs(size_t start) {
 vector<path> getImgs(const path &p) {
 	vector<path> tmp;
 
-	if(is_regular_file(p)) (
-	    ifstream file(validfile);
+    if (is_regular_file(p)) {
+        ifstream file(p);
 	    string fname;
 	    while (std::getline(file, fname)) {
-	        if (ïsImg(imgName)) tmp.push_back(path(fname));
+            if (isImg(imgName)) tmp.push_back(path(fname));
 	    }
 	    file.close();
-	)
+    }
 	else {
 		for (auto &entry : directory_iterator(p)) {
 			imgName = entry.path().filename();
@@ -109,8 +109,6 @@ vector<path> getImgs(const path &p) {
 		}
 
 	}
-
-
 	sort(tmp.begin(), tmp.end());
 	return tmp;
 }

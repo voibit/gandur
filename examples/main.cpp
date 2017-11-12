@@ -70,22 +70,36 @@ bool ext(const std::string &file,const std::string &ext) {
 }
 
 int main(int argn, char** argv) {
-    std::vector<Detection> dets;
+    const String keys =
+            "{help h ?          |       | print this message        }"
+                    "{thresh            |       | detection threshold       }"
+                    "{@file             |       | mediafile to network      }";
+    CommandLineParser parser(argn, argv, keys);
+    parser.about("Gandur test v1.0.0");
 
-    if (argn < 2) {
-        cout << "./gandur mediafile\n";
-        return -1;
-
+    if (parser.has("help")) {
+        parser.printMessage();
+        return 0;
     }
-	std::string file = argv[1];
+    if (argn < 2) {
+        parser.printMessage();
+        return -1;
+    }
+
+    string file = parser.get<String>(0);
+    vector<Detection> dets;
 	auto *net = new Gandur();
 	Mat image; 
 
 	VideoCapture cap ( file );
     if( ! cap.isOpened () )  
     {
-        EPRINTF("Could not load the AV file %s\n", file.c_str());
+        cout << "Could not load av-file: " << file << endl;
         return -1;
+    }
+
+    if (parser.has("thresh")) {
+        net->setThresh(parser.get<float>("thresh"));
     }
 
     while(true) {
@@ -105,7 +119,7 @@ int main(int argn, char** argv) {
 		if(k==27) break;
 	    }
 	    else {
-	    	EPRINTF("Cant read image / end of video..\n");
+            cout << "End of file.. exiting.." << endl;
 	    	break;
 	    }
 
