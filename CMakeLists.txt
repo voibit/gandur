@@ -3,7 +3,9 @@ cmake_minimum_required(VERSION 3.9.3)
 project(gandur)
 
 set(CMAKE_CXX_STANDARD 11)
+
 set(DARKNET ../darknet)
+set(CUDA /opt/cuda)
 
 find_package( OpenCV REQUIRED )
 find_package( Boost COMPONENTS filesystem REQUIRED )
@@ -12,9 +14,14 @@ include_directories(${DARKNET}/include)
 include_directories(${DARKNET}/src)
 include_directories(. examples)
 
+add_definitions(-DGPU)
+add_definitions(-DCUDNN)
+include_directories(${CUDA}/include)
+link_directories(${CUDA}/lib64)
+
 link_directories(${DARKNET})
 set(CVB ${OpenCV_LIBS} ${Boost_LIBRARIES})
-set(ALL ${CVB} darknet)
+set(ALL ${CVB} darknet cuda cudart cublas curand)
 
 add_executable(gandur examples/main.cpp gandur.cpp)
 add_executable(videt examples/videt.cpp gandur.cpp)
