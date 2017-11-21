@@ -1,42 +1,59 @@
 #include "gandur.hpp"
+#include <thread>
+
 
 class Valid : public Gandur {
 public:
-    bool validate(path backupdir, path validfile);
+    bool validate(path backupdir, path w, std::vector<path> imgs);
 };
+void valid_thread(path w, std::vector<path> imgs;) {
 
-int main(int argc, char **argv) {
-    path p(argc > 1 ? argv[1] : ".");
-    path validlist(argc > 2 ? argv[2] : "");
-
-    //cuda_set_device(1);
+        //cuda_set_device(1);
     auto *net = new Valid();
-    net->validate(p, validlist);
-    return 0;
+    net->setWeights(w);
+    net->validate(p, imgs);
+    delete net;
+
 }
 
-bool Valid::validate(path backupdir, path validfile) {
+int main(int argc, char **argv) {
+	path backupdir(argc > 1 ? argv[1] : ".");
+	path validfile(argc > 2 ? argv[2] : "");
+
+    vector<path> weights;
+    vector<path> imgs;
+
+
+    if (is_regular_file(backupdir)) {
+        weights.push_back(backupdir);
+    } else {
+        for (int i = 1000; i < 200000; i += 1000) {
+            path wname = cfgname.string() + "_" + std::to_string(i) + ".weights";
+            if (exists(backupdir / wname)) {
+                weights.push_back(backupdir / wname);
+            }
+        }
+    }
+    ifstream file(validfile);
+    string fname;
+    while (std::getline(file, fname)) {
+        imgs.emplace_back(fname);
+    }
+    file.close();
+
+
+
+
+	return 0;
+}
+
+bool Valid::validate(path backupdir, path w, std::vector<path> imgs) {
 
     path cfgname = cfg.netCfg.filename();
     cfgname.replace_extension("");
     float iou_thresh = option_find_float(options, (char *) "iou-thresh", 0.5);
 
-    if (validfile=="") {
-        validfile = option_find_str(options, (char *) "valid", (char *) "../darknet/valid.txt");
-    }
-    if (!is_regular_file(validfile)) {
-        cout << "Valid file not found. please specyfy in conf\n";
-        return false;
-    }
-    if (is_empty(backupdir)) {
-        backupdir = string(option_find_str(options, (char *) "backup", (char *) "/backup/"));
-    }
-    if (!exists(backupdir)) {
-        cout << "backup dir not found. please specify in conf\n";
-        return false;
-    }
-    vector<path> weights;
-    vector<path> imgs;
+
     /*
     //fill weights vector;
     for(auto &entry : directory_iterator(backupdir)) {
@@ -53,24 +70,9 @@ bool Valid::validate(path backupdir, path validfile) {
     sort(weights.begin(), weights.end());
     */
 
-    if (is_regular_file(backupdir)) {
-        weights.push_back(backupdir);
-    } else {
-        for (int i = 1000; i < 200000; i += 1000) {
-            path wname = cfgname.string() + "_" + std::to_string(i) + ".weights";
-            if (exists(backupdir / wname)) {
-                weights.push_back(backupdir / wname);
-            }
-        }
-    }
 
     //fill image vector
-    ifstream file(validfile);
-    string fname;
-    while (std::getline(file, fname)) {
-        imgs.emplace_back(fname);
-    }
-    file.close();
+
 
     ofstream ofile(cfgname.replace_extension(".csv"));
 

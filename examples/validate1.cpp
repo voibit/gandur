@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
     path p(argc > 1 ? argv[1] : ".");
     path validlist(argc > 2 ? argv[2] : "");
 
-    //cuda_set_device(1);
+    cuda_set_device(1);
     auto *net = new Valid();
     net->validate(p, validlist);
     return 0;

@@ -14,8 +14,8 @@ size_t current = 0;
 
 vector<path> getImgs(const path &p);
 
-bool doresize = true;
-
+bool doresize = false;
+bool vresize = false;
 
 Gandur *net = nullptr;
 path imgName;
@@ -25,6 +25,8 @@ path savePath;
 vector<path> imgs;
 vector<Detection> dets;
 vector<string> classes;
+
+Mat resized(const Mat &orig, int rsize);
 
 bool isImg(path p);
 
@@ -56,6 +58,10 @@ void loopImgs(size_t start = 0);
 int main(int argc, char**argv){
 	workPath = argc>1 ? argv[1] : ".";
 	savePath = argc>2 ? argv[2] : workPath/"ok";
+
+
+	 if (argc>3) doresize = true; 
+
 
 	int start = argc > 3 ? atoi(argv[3]) + 1 : 0;
 	std::cout << start << std::endl; 
@@ -134,7 +140,7 @@ void show(size_t i) {
 	origImg = imread(imgs[i].string());
 
 
-	if (doresize) {
+	if (vresize) {
 		double factor = 1088. / origImg.rows;
 		resize(origImg, origImg, cv::Size(0, 0), factor, factor, CV_INTER_LINEAR);
 	}
@@ -201,10 +207,10 @@ void readTxt(path p) {
 		std::istringstream ss(line);
 		ss >> id >> x >> y >> w >> h;
 
-		W = (int) w * img.cols;
-		H = (int) h * img.rows;
-		X = (int) (x * img.cols - W / 2.);
-		Y = (int) (y * img.rows - H / 2.);
+		W = w * img.cols;
+		H = h * img.rows;
+		X = (x * img.cols - W / 2.);
+		Y = (y * img.rows - H / 2.);
 		det.box = Rect(X, Y, W, H);
 		det.labelId = id;
 		if (net) det.label = net->getLabel(id);
@@ -325,8 +331,36 @@ bool label() {
 	return true;
 }
 
+
+
+Mat resized(const Mat &orig, int rsize) {
+ 	Mat tmp;
+ 	//hvor mye større i bredde.
+ 	double ratio = orig.cols /orig.rows;
+ 	//bredere enn høy
+ 	if (orig.rows < orig.cols) {
+ 		cv::resize(orig, tmp, Size(rsize, rsize/ratio));
+ 	}
+ 	else if(orig.rows > orig.cols) {
+ 		cv::resize(orig, tmp, Size(rsize/ratio, rsize));
+
+ 	}
+ 	else cv::resize(orig, tmp, Size(rsize, rsize));
+ 	return tmp;
+
+ 	
+
+}
+
 void save() {
-	//copy_file(workPath / imgName, savePath / imgName, copy_option::overwrite_if_exists);
+	if (workPath != savePath) {
+	    std::vector<int> compression_params;
+		compression_params.push_back(IMWRITE_JPEG_QUALITY);
+		compression_params.push_back(100);
+		Mat orig=imread((workPath / imgName).string());
+		imwrite((savePath/imgName).string(),doresize?resized(orig, 608):orig, compression_params);
+		copy_file(workPath / imgName, savePath / imgName, copy_option::overwrite_if_exists);	
+	}
 	saveTxt(savePath / txtName);
 	message = "labels saved.. ";
 	draw();
