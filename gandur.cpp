@@ -13,8 +13,9 @@ Gandur::Gandur() {
     classNames = nullptr;
     l = {};
     net = {};
-    nms = 0.4;  //TODO: figure out what this is....
+    nms = 0.4; // Default value used in darknet
     masks = nullptr;
+    ngpus = 1;
     setlocale(LC_NUMERIC,"C");
     loadCfg("gandur.conf");
     loadVars();
@@ -65,8 +66,6 @@ void Gandur::loadWeights(path p) {
 }
 
 bool Gandur::loadVars() {
-    //DPRINTF("Setup: layers = %d, %d, %d\n", l.w, l.h, l.n);
-    //DPRINTF("Image expected w,h = [%d][%d]!\n", net->w, net->h);
     size_t j;
     net = parse_network_cfg((char *) cfg.netCfg.c_str());
     //Set layer to detection layer
@@ -100,7 +99,7 @@ bool Gandur::loadVars() {
             goto clean_exit;
         }
     }
-    DPRINTF("Setup: Done\n");
+    cout << "Setup: Done\n";
     return true;
 
     clean_exit:
@@ -213,8 +212,6 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
 
     network_predict(net, inData);
     get_region_boxes(l, img.cols, img.rows,net->w, net->h, thresh, probs, boxes, masks, 0, nullptr, tree_thresh,1);
-    //Sorter boxer elns.
-    DPRINTF("l.softmax_tree = %p, nms = %f\n", l.softmax_tree, nms);
     if (l.softmax_tree && nms)do_nms_obj(boxes, probs, nboxes, l.classes, nms);
     else if (nms) do_nms_sort(boxes, probs, nboxes, l.classes, nms);
 
@@ -232,15 +229,6 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
             tmp.box=ptoi(img.cols, img.rows, boxes[i]);
             detections.push_back(tmp);
         }
-        /*
-        //print all propabilities
-        for(size_t j = 0; j < l.classes; j++) {
-            
-            if (probs[i][j] > 0.1) {
-                printf("%s: %.0f%%\n", classNames[j], probs[i][j]*100);
-            }
-        }
-        */
     }
 }
 

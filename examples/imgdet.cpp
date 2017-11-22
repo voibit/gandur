@@ -14,7 +14,7 @@ size_t current = 0;
 
 vector<path> getImgs(const path &p);
 
-bool doresize = false;
+bool doresize = true;
 bool vresize = false;
 
 Gandur *net = nullptr;
@@ -27,31 +27,18 @@ vector<Detection> dets;
 vector<string> classes;
 
 Mat resized(const Mat &orig, int rsize);
-
 bool isImg(path p);
-
 bool delImg();
-
 bool delImg(size_t i);
-
 void saveTxt(path p);
-
 void readTxt(path p);
-
 void next();
-
 void prev();
-
 void show(size_t i);
-
 void draw();
-
 void banner();
-
 bool label();
-
 void save();
-
 void loopImgs(size_t start = 0);
 
 
@@ -59,10 +46,7 @@ int main(int argc, char**argv){
 	workPath = argc>1 ? argv[1] : ".";
 	savePath = argc>2 ? argv[2] : workPath/"ok";
 
-
-	 if (argc>3) doresize = true; 
-
-
+    if (argc>3) doresize = true;
 	int start = argc > 3 ? atoi(argv[3]) + 1 : 0;
 	std::cout << start << std::endl; 
 
@@ -90,47 +74,64 @@ int main(int argc, char**argv){
 }
 
 
+/**
+ * Detection loop
+ * @param start image number
+ */
 void loopImgs(size_t start) {
-	namedWindow("Gandur", WINDOW_AUTOSIZE);
-	moveWindow("Gandur", 0, 0);
-	show(start);
+    namedWindow("Gandur", WINDOW_AUTOSIZE);
+    moveWindow("Gandur", 0, 0);
+    show(start);
 
-	while (label()) {}
-
+    while (label()) {}
 }
 
+
+/**
+ * Reads all images in a directory
+ * @param directory to look for images
+ * @return all image paths in given directory
+ */
 vector<path> getImgs(const path &p) {
-	vector<path> tmp;
+    vector<path> tmp;
 
     if (is_regular_file(p)) {
         ifstream file(p);
-	    string fname;
-	    while (std::getline(file, fname)) {
+        string fname;
+        while (std::getline(file, fname)) {
             if (isImg(imgName)) tmp.push_back(path(fname));
-	    }
-	    file.close();
+        }
+        file.close();
+    } else {
+        for (auto &entry : directory_iterator(p)) {
+            imgName = entry.path().filename();
+            if (isImg(imgName)) tmp.push_back(p / imgName);
+        }
     }
-	else {
-		for (auto &entry : directory_iterator(p)) {
-			imgName = entry.path().filename();
-			if (isImg(imgName)) tmp.push_back(p / imgName);
-		}
-
-	}
-	sort(tmp.begin(), tmp.end());
-	return tmp;
+    sort(tmp.begin(), tmp.end());
+    return tmp;
 }
 
+/**
+ * Go to next image
+ */
 void next() {
 	if ((current + 1) < count) current++;
 	show(current);
 }
 
+/**
+ * Go to previous image
+ */
 void prev() {
 	if (current > 0) current--;
 	show(current);
 }
 
+/**
+ * Show image
+ * @param image number
+ */
 void show(size_t i) {
 	current = i;
 	imgName = imgs[i].filename();
@@ -165,10 +166,17 @@ void show(size_t i) {
 	draw();
 }
 
+/**
+ * Delete current image
+ */
 bool delImg() {
 	return delImg(current);
 }
 
+/**
+ * Delete image
+ * @param image number
+ */
 bool delImg(size_t i) {
 	if (i > count) return false;
 	else {
@@ -180,6 +188,11 @@ bool delImg(size_t i) {
 	}
 }
 
+/**
+ * Check path extention
+ * @param path
+ * @return true if path has an image extension
+ */
 bool isImg(path p) {
 	string ext = extension(p);
 	bool ret = ext == ".jpg";
@@ -195,6 +208,10 @@ bool isImg(path p) {
 	return ret;
 }
 
+/**
+ * Read label file
+ * @param path to label file
+ */
 void readTxt(path p) {
 	dets.clear();
 	string line;
@@ -207,10 +224,10 @@ void readTxt(path p) {
 		std::istringstream ss(line);
 		ss >> id >> x >> y >> w >> h;
 
-		W = w * img.cols;
-		H = h * img.rows;
-		X = (x * img.cols - W / 2.);
-		Y = (y * img.rows - H / 2.);
+		W = (int)(w * img.cols);
+		H = (int)(h * img.rows);
+		X = (int)(x * img.cols - W / 2.);
+		Y = (int)(y * img.rows - H / 2.);
 		det.box = Rect(X, Y, W, H);
 		det.labelId = id;
 		if (net) det.label = net->getLabel(id);
@@ -219,6 +236,9 @@ void readTxt(path p) {
 	}
 }
 
+/**
+ * Draws a banner over the image
+ */
 void banner() {
 	Rect box(0, 0, img.cols, 26);
 	Scalar rgba(0, 0, 0, 0.7);
@@ -229,6 +249,9 @@ void banner() {
 	addWeighted(color, alpha, roi, 1.0 - alpha, 0.0, roi);
 }
 
+/**
+ * Draw detection boxes, classes and information over the image.
+ */
 void draw() {
 	//start with a clean image
 	img = origImg.clone();
@@ -243,8 +266,9 @@ void draw() {
 
 	//Draw message
 	Size textSize = getTextSize(message, FONT_HERSHEY_DUPLEX, 0.5, 1, 0);
-	putText(img, message, Point(img.cols - textSize.width, 20), FONT_HERSHEY_DUPLEX, 0.5, CV_RGB(30, 230, 150), 1,
-			CV_AA);
+    putText(img, message, Point(img.cols - textSize.width, 20),
+            FONT_HERSHEY_DUPLEX, 0.5, CV_RGB(30, 230, 150), 1,
+            CV_AA);
 
 	//Draw detections
 	for (auto det : dets) {
@@ -256,7 +280,7 @@ void draw() {
 		putText(img, det.label, txtpos, FONT_HERSHEY_DUPLEX, 0.6, CV_RGB(0, 255, 50), 1, CV_AA);
 		textSize = getTextSize(det.label, FONT_HERSHEY_DUPLEX, 0.6, 1, 0);
 		txtpos.x += textSize.width - 2;
-		int prob = det.prob * 100.;
+		int prob = (int)(det.prob * 100.);
 		putText(img, to_string(prob) + "%", txtpos, FONT_HERSHEY_DUPLEX, 0.4, CV_RGB(0, 0, 0), 1, CV_AA);
 		txtpos.x -= 2;
 		txtpos.y -= 1;
@@ -278,7 +302,6 @@ bool label() {
 
 		message = classes[id];
 		draw();
-
 		Rect box = selectROI("Gandur", img);
 
 		if (box.width != 0 && box.height != 0) {
@@ -292,25 +315,25 @@ bool label() {
 	}
 
 	switch (k) {
-		case 81: //left
+        case 81:                //left
 			prev();
 			break;
-		case 83: //right
+        case 83:                //right
 			next();
 			break;
-			//save
-		case 10: //enter
-		case ' '://space
+            //save
+        case 10:                //enter
+        case ' ':                //space
 		case 's':
 			save();
 			next();
 			break;
-			//reset boxing.
+            //reset boxing.
 		case 'r':
 			dets.clear();
 			draw();
 			break;
-			//get from network
+            //get from network
 		case 'n':
 			dets.clear();
 			dets = net->detections;
@@ -326,32 +349,36 @@ bool label() {
 			break;
 		default:
 			return true;
-			break;
 	}
 	return true;
 }
 
-
-
+/*
+ * Resize dataset image, keep aspect ratio
+ * @param image
+ * @param max size, hight or width
+ */
 Mat resized(const Mat &orig, int rsize) {
- 	Mat tmp;
- 	//hvor mye større i bredde.
- 	double ratio = orig.cols /orig.rows;
- 	//bredere enn høy
- 	if (orig.rows < orig.cols) {
- 		cv::resize(orig, tmp, Size(rsize, rsize/ratio));
- 	}
- 	else if(orig.rows > orig.cols) {
- 		cv::resize(orig, tmp, Size(rsize/ratio, rsize));
+    Mat tmp;
+    //hvor mye større i bredde.
+    double ratio = orig.cols /orig.rows;
+    //bredere enn høy
+    if (orig.rows < orig.cols) {
+        cv::resize(orig, tmp, Size(rsize, rsize/ratio));
+    }
+    else if(orig.rows > orig.cols) {
+        cv::resize(orig, tmp, Size(rsize/ratio, rsize));
 
- 	}
- 	else cv::resize(orig, tmp, Size(rsize, rsize));
- 	return tmp;
+    }
+    else cv::resize(orig, tmp, Size(rsize, rsize));
+    return tmp;
 
- 	
+
 
 }
-
+/**
+ * Save label and image
+ */
 void save() {
 	if (workPath != savePath) {
 	    std::vector<int> compression_params;
@@ -359,22 +386,26 @@ void save() {
 		compression_params.push_back(100);
 		Mat orig=imread((workPath / imgName).string());
 		imwrite((savePath/imgName).string(),doresize?resized(orig, 608):orig, compression_params);
-		copy_file(workPath / imgName, savePath / imgName, copy_option::overwrite_if_exists);	
+		copy_file(workPath / imgName, savePath / imgName, copy_option::overwrite_if_exists);
 	}
 	saveTxt(savePath / txtName);
 	message = "labels saved.. ";
 	draw();
 }
 
+/*
+ * Save label
+ * @param where to save
+ */
 void saveTxt(path p) {
-	ofstream file(savePath / txtName);
-	for (size_t i = 0; i < dets.size(); i++) {
-		if (i > 0) file << std::endl;
-		file << dets[i].labelId;
-		file << " " << (dets[i].box.x + dets[i].box.width / 2.) / img.cols;
-		file << " " << (dets[i].box.y + dets[i].box.height / 2.) / img.rows;
-		file << " " << dets[i].box.width / (float) img.cols;
-		file << " " << dets[i].box.height / (float) img.rows;
-	}
-	file.close();
+    ofstream file(savePath / txtName);
+    for (size_t i = 0; i < dets.size(); i++) {
+        if (i > 0) file << std::endl;
+        file << dets[i].labelId;
+        file << " " << (dets[i].box.x + dets[i].box.width / 2.) / img.cols;
+        file << " " << (dets[i].box.y + dets[i].box.height / 2.) / img.rows;
+        file << " " << dets[i].box.width / (float) img.cols;
+        file << " " << dets[i].box.height / (float) img.rows;
+    }
+    file.close();
 }

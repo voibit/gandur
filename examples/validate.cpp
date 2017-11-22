@@ -17,6 +17,15 @@ int main(int argc, char **argv) {
 
 bool Valid::validate(path backupdir, path validfile) {
 
+
+    network **nets = (net *) calloc(ngpus, sizeof(network));
+    nets[0] = net;
+
+    for (int i = 1; i < ngpus; ++i) {
+        nets[i] = parse_network_cfg((char *) cfg.netCfg.c_str());
+        load_weights(nets[i], (char *) cfg.weights.c_str());
+    }
+
     path cfgname = cfg.netCfg.filename();
     cfgname.replace_extension("");
     float iou_thresh = option_find_float(options, (char *) "iou-thresh", 0.5);
@@ -96,7 +105,12 @@ bool Valid::validate(path backupdir, path validfile) {
         ofstream ofilee(weight.replace_extension("error.csv"));
         ofilee << "file" << delim << "boxnr" << delim << "classification[true-proposed]" << endl;
 
-        for (path p : imgs) {
+        for (size_t i = 0; i < imgs.size(); ++i) {
+            path p = imgs[i];
+
+            if (exists(p)) {
+
+            }
             img = cv::imread(p.string());
             cv::Mat sized = resizeLetterbox(img);
 

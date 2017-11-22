@@ -11,7 +11,7 @@ Mat drawDetections(Mat img, std::vector<Detection> &dets) {
         float degrees = o.rects[i].x+o.rects[i].width/2-image.cols/2;
         degrees *= dpp;
         */
-
+ 
         //DPRINTF("Label:%s prob: %00f \n\n", labels[objId].c_str(),probs[objId]);
         
         //Draw label
