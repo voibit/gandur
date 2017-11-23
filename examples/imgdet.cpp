@@ -190,7 +190,7 @@ bool delImg(size_t i) {
 
 /**
  * Check path extention
- * @param path
+ * @param p image path
  * @return true if path has an image extension
  */
 bool isImg(path p) {
@@ -210,7 +210,7 @@ bool isImg(path p) {
 
 /**
  * Read label file
- * @param path to label file
+ * @param p path to label file
  */
 void readTxt(path p) {
 	dets.clear();
@@ -289,7 +289,11 @@ void draw() {
 	imshow("Gandur", img);
 }
 
-
+/**
+ * Detection loop item
+ * Parses keyboard commands.
+ * @return
+ */
 bool label() {
 
 	message = "press 0-9 for class id, r reset, s save, c cancel";
@@ -297,11 +301,18 @@ bool label() {
 	int k = waitKey(0);
 	if (k == 'q' || k == 27) return false;
 	if (k == '|') k = 48;
+
+    /**
+     * Keyboard numbers stars on 48 in the  ascii table
+     * Handle that.
+     */
 	if (k > 47 && k < 48 + classes.size()) {
 		int id = k - 48;
 
 		message = classes[id];
 		draw();
+
+        ///> Use the mouse to draw box around objects.
 		Rect box = selectROI("Gandur", img);
 
 		if (box.width != 0 && box.height != 0) {
@@ -315,30 +326,34 @@ bool label() {
 	}
 
 	switch (k) {
-        case 81:                //left
+        ///> Go to previous
+        case 81:                ///> left
 			prev();
 			break;
-        case 83:                //right
+            ///> Go to next image
+        case 83:                ///> right
 			next();
 			break;
-            //save
-        case 10:                //enter
-        case ' ':                //space
+            ///> Save label and go to next image.
+        case 10:                ///> enter
+        case ' ':               ///> space
 		case 's':
 			save();
 			next();
 			break;
-            //reset boxing.
+            ///> Reset box detections
 		case 'r':
 			dets.clear();
 			draw();
 			break;
-            //get from network
+            ///> Get boxes from network
 		case 'n':
 			dets.clear();
 			dets = net->detections;
 			message = "network results";
 			draw();
+            break;
+            ///> Delete current image
 		case 'd':
 			message = "Are you shure you want to delete this file?(y/N):";
 			draw();
@@ -353,16 +368,16 @@ bool label() {
 	return true;
 }
 
-/*
- * Resize dataset image, keep aspect ratio
- * @param image
- * @param max size, hight or width
+/**
+ * Resize when saving dataset image, keep aspect ratio
+ * @param orig image
+ * @param rsize max size, hight or width
  */
 Mat resized(const Mat &orig, int rsize) {
     Mat tmp;
-    //hvor mye større i bredde.
+    ///> ratio: How big is the with compared to the height?
     double ratio = orig.cols /orig.rows;
-    //bredere enn høy
+    ///> if thre widht is wider than high
     if (orig.rows < orig.cols) {
         cv::resize(orig, tmp, Size(rsize, rsize/ratio));
     }
@@ -393,9 +408,9 @@ void save() {
 	draw();
 }
 
-/*
- * Save label
- * @param where to save
+/**
+ * Save labelfile
+ * @param p savepath
  */
 void saveTxt(path p) {
     ofstream file(savePath / txtName);

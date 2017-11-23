@@ -18,7 +18,6 @@ Gandur::Gandur() {
     ngpus = 1;
     setlocale(LC_NUMERIC,"C");
     loadCfg("gandur.conf");
-    loadVars();
 }
     
 Gandur::~Gandur() {
@@ -66,6 +65,10 @@ void Gandur::loadWeights(path p) {
 }
 
 bool Gandur::loadVars() {
+    //return true if already loaded.
+    if (probs != nullptr) {
+        return true;
+    }
     size_t j;
     net = parse_network_cfg((char *) cfg.netCfg.c_str());
     //Set layer to detection layer
@@ -83,19 +86,20 @@ bool Gandur::loadVars() {
     boxes = (box *) calloc(nboxes, sizeof(box));
     probs = (float **) calloc(nboxes, sizeof(float *));
 
+    //From darknet, not shure what it does yet.
     if (l.coords > 4) {
         masks = (float **) calloc(nboxes, sizeof(float *));
         for (j = 0; j < nboxes; ++j) masks[j] = (float *) calloc(l.coords - 4, sizeof(float));
     }
     // Error exits
     if(!boxes || !probs) {
-        EPRINTF("Error allocating boxes/probs, %p/%p !\n", boxes, probs);
+        cout << "Error allocating boxes/probs! \n";  // boxes, probs);
         goto clean_exit;
     }
     for (j = 0; j < nboxes; ++j) {
         probs[j] = (float*)calloc(l.classes + 1, sizeof(float));
         if (!probs[j]) {
-            EPRINTF("Error allocating probs[%d]!\n", j);
+            cout << "Error allocating prob in probs! \n";  // [%d]!\n", j);
             goto clean_exit;
         }
     }
@@ -113,31 +117,47 @@ bool Gandur::loadVars() {
 }
 
 bool Gandur::Detect(cv::Mat inputMat, float thresh, float tree_thresh) {
+    /**
+     * Load vars so Darknet can store detections somewhere.
+     * (if not already done).
+     */
+    loadVars();
+
     img = inputMat.clone();
     detections.clear();
 
     if(inputMat.empty()) {
         return false;
     }
-
+    /**
+     * Check if image is the size of the network
+     * if not resize.
+     */
     if (inputMat.rows != net->h || inputMat.cols != net->w) {
         inputMat=resizeLetterbox(inputMat);
     }
-    //Convert to darknet image format, and run detections.
+
+    /**
+     * Convert input image to darknet format
+     * Override thresholds if specified.
+     */
     __Detect(bgrToFloat(inputMat),
              thresh == 0 ? cfg.thresh : thresh,
              tree_thresh == 0 ? cfg.treeThresh : tree_thresh);
-    return true;
+    return !detections.empty(); ///> Return true if there are detections in image
 }
 
 float *Gandur::bgrToFloat(const cv::Mat &inputMat) {
-    //Convert to rgb
-    cv::Mat inputRgb;
-    cvtColor(inputMat, inputRgb, CV_BGR2RGB);
-    // Convert the bytes to float
-    cv::Mat floatMat;
+
+    cv::Mat inputRgb;                           ///> Mat to store rgb image
+    cvtColor(inputMat, inputRgb, CV_BGR2RGB);   ///> convert fro bgr to rgb.
+    cv::Mat floatMat;                           ///> Mat to store float rgb image
+    ///> Creates floatmat that stores values from 0-1
     inputRgb.convertTo(floatMat, CV_32FC3, 1/255.0);
-    // Get the image to suit darknet
+
+    /**
+     * Convert the three color layers to one continious where g follows r...
+     */
     vector<cv::Mat> floatMatChannels(3);
     split(floatMat, floatMatChannels);
     vconcat(floatMatChannels, floatMat);
@@ -174,7 +194,6 @@ vector<string> Gandur::getClasses() {
     return v;
 }
 
-//convert darknet box to cv rect & keep aspectratio.
 cv::Rect Gandur::ptoi(const int &width, const int &height, const box &b) {
     cv::Rect box;
 
@@ -185,42 +204,57 @@ cv::Rect Gandur::ptoi(const int &width, const int &height, const box &b) {
 
     return box;
 }
-/*
-vector<Detection> Gandur::readLabels(path img) {
 
-    vector<Detection> dets;
-    int num_labels = 0;
-    box_label *truth = read_boxes((char *)img.c_str(), &num_labels);
 
-    for (size_t i = 0; i < num_labels; ++i) {
-        box t = {truth[i].x, truth[i].y, truth[i].w, truth[i].h};
-        dets.emplace_back(
-                truth[i].id,
-                classNames[truth[i].id],
-                1,
-                ptoi(t));
-    }
-    return dets;
-}
-
-*/
-//////////////////////////////////////////////////////////////////
-/// Private APIs
-//////////////////////////////////////////////////////////////////
-void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
-    int i;
-
+void Gandur::__Detect(float *inData, float thresh, float treeThresh) {
+    /**
+     * Darknet function to do the predictions
+     * @param net network struct
+     * @param inData image to do detections in
+     */
     network_predict(net, inData);
-    get_region_boxes(l, img.cols, img.rows,net->w, net->h, thresh, probs, boxes, masks, 0, nullptr, tree_thresh,1);
+
+    /**
+     * Darknet function to get pox predictions from network
+     * @param [in] l detection layer
+     * @param [in] img.cols Image width
+     * @param [in] img.rows Image height
+     * @param [in] net->w network width
+     * @param [in] net->h network height
+     * @param [in] thresh detection threshold
+     * @param [out] probs array with probabilities
+     * @param [out] boxes array with detection boxes
+     * @param [out] masks array with detection masks?
+     * @param [in] only_objectness bool?
+     * @param [in] map used in tree detecton?
+     * @param [in] treeThresh detection threshold for tree type detection
+     * @param [in] relative ?
+     */
+    get_region_boxes(l, img.cols, img.rows, net->w, net->h, thresh, probs, boxes, masks, 0, nullptr, treeThresh, 1);
+    /**
+     * Sort tree predictions
+     */
     if (l.softmax_tree && nms)do_nms_obj(boxes, probs, nboxes, l.classes, nms);
+        /**
+         * NMS, supress different boxex in same prediction
+         */
     else if (nms) do_nms_sort(boxes, probs, nboxes, l.classes, nms);
 
-    // Update object counts
-    for (i = 0; i < nboxes; ++i) {
+    /**
+     * Loop through all prediction boxes.
+     * Yolov2 does 5 prediction boxes per prediction cell, and gives a confidence
+     * score for each class.
+     *
+     * Stores the most certain predictions in network
+     */
+    for (int i = 0; i < nboxes; ++i) {
 
-        int class1 = max_index(probs[i], l.classes);
-        float prob = probs[i][class1];
+        int class1 = max_index(probs[i], l.classes); ///> Get highest classid for box.
+        float prob = probs[i][class1];               ///> Get the highest probability.
 
+        /**
+         * Add to detection vector if probability is higher than threshold
+         */
         if (prob > thresh){
             Detection tmp;
             tmp.label= string(classNames[class1]);
@@ -232,6 +266,9 @@ void Gandur::__Detect(float* inData, float thresh, float tree_thresh) {
     }
 }
 
+/**
+ * Cfg class implementation
+ */
 Cfg::Cfg() : thresh(0), treeThresh(0) {};
 
 bool Cfg::check() {

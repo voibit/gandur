@@ -1,19 +1,22 @@
-#include "gandur.hpp"
+#include "valid.hpp"
 #include <thread>
+#include <mutex>
+
+static int ngpus = 2;
+Mutex mtx;
+
 
 
 class Valid : public Gandur {
 public:
     bool validate(path backupdir, path w, std::vector<path> imgs);
+
 };
 void valid_thread(path w, std::vector<path> imgs;) {
-
-        //cuda_set_device(1);
     auto *net = new Valid();
     net->setWeights(w);
     net->validate(p, imgs);
     delete net;
-
 }
 
 int main(int argc, char **argv) {
@@ -34,12 +37,30 @@ int main(int argc, char **argv) {
             }
         }
     }
+
+    // Get imgs to validate;
     ifstream file(validfile);
     string fname;
     while (std::getline(file, fname)) {
         imgs.emplace_back(fname);
     }
     file.close();
+
+
+    Valid *nets[ngpus];
+
+    for (int i = 0; i < ngpus; ++i) {
+        cuda_set_device(i);
+        nets[i] = new Valid();
+    }
+    for (int j = 0; j < weights.size(); j += ngpus) {
+        for (int i = 0; i < ngpus; ++i) {
+            nets[i]->validate(weights[j + i], imgs);
+        }
+
+    }
+
+
 
 
 

@@ -1,5 +1,11 @@
 #include "gandur.hpp"
 
+/**
+ * Extends Ganudur
+ * Adds validation fuctionality
+
+ */
+//TODO: Add threads, and multigpu support
 class Valid : public Gandur {
 public:
     bool validate(path backupdir, path validfile);
@@ -9,22 +15,12 @@ int main(int argc, char **argv) {
     path p(argc > 1 ? argv[1] : ".");
     path validlist(argc > 2 ? argv[2] : "");
 
-    //cuda_set_device(1);
     auto *net = new Valid();
     net->validate(p, validlist);
     return 0;
 }
 
 bool Valid::validate(path backupdir, path validfile) {
-
-
-    network **nets = (net *) calloc(ngpus, sizeof(network));
-    nets[0] = net;
-
-    for (int i = 1; i < ngpus; ++i) {
-        nets[i] = parse_network_cfg((char *) cfg.netCfg.c_str());
-        load_weights(nets[i], (char *) cfg.weights.c_str());
-    }
 
     path cfgname = cfg.netCfg.filename();
     cfgname.replace_extension("");
@@ -105,12 +101,7 @@ bool Valid::validate(path backupdir, path validfile) {
         ofstream ofilee(weight.replace_extension("error.csv"));
         ofilee << "file" << delim << "boxnr" << delim << "classification[true-proposed]" << endl;
 
-        for (size_t i = 0; i < imgs.size(); ++i) {
-            path p = imgs[i];
-
-            if (exists(p)) {
-
-            }
+        for (path p : imgs) {
             img = cv::imread(p.string());
             cv::Mat sized = resizeLetterbox(img);
 
@@ -178,7 +169,6 @@ bool Valid::validate(path backupdir, path validfile) {
         cout << weight.filename() << "\t Avg iou:" << avg_iou * 100 / total << "\t mAP:" << 100. * correct / total
              << std::endl;
 
-        
     } // weights loop
     ofile.close();
 }
