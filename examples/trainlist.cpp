@@ -2,6 +2,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/crc.hpp>
 #include <cmath>
+#include <sstream>
 
 using namespace boost::filesystem;
 using std::string;
@@ -58,6 +59,25 @@ void writeList(const path &p, const vector<string> &list) {
 	} 
 	file.close();
 }
+/**
+ * Count class ids
+ * @param [in] path to image or labelfile
+ * @param [out] vector with class count
+ */
+void countP(path p, vector<int> &countC) {
+	p.replace_extension(".txt");
+	ifstream file(p);
+
+	string line;
+	while (getline(file, line)) {
+		int id;
+		std::stringstream ss(line);
+		ss >> id;
+		///> Make shure within range and +1
+		if (id < countC.size()) countC[id]++;
+	}
+	file.close();
+}
 
 int main(int argc, char **argv) {
 
@@ -67,7 +87,8 @@ int main(int argc, char **argv) {
 	path dirsfile="./data/traindirs.txt";
 	path trainlist="../darknet/trainlist.txt";
 	path validlist="../darknet/validlist.txt";
-	float prob = 0.09;
+	float prob = 0.09; 			///> How much of the set to be valid
+	vector<int> countC(10, 0); 	///> Count for the different classes
 
 	///> Parse terminal arguments
 	if (argc>1) dirsfile=argv[1];
@@ -109,8 +130,12 @@ int main(int argc, char **argv) {
         for (auto &entry : directory_iterator(dir)) {
 			if(checkFile(entry.path()) ) {
 				string imgpath = canonical(entry).string();
+
+				///> Add to valid or trainlist
 				if (isValid(imgpath, prob)) valid.push_back(imgpath);
 				else train.push_back(imgpath);
+
+				countP(imgpath, countC); ///> Count different classes.
 			}	
 		}
 	}
@@ -118,6 +143,12 @@ int main(int argc, char **argv) {
 	writeList(trainlist, train); 
 	writeList(validlist, valid); 
 
-	cout << "Wrote "<< train.size() <<" training images, "<< valid.size() << " validation images" << endl;
+	///> Display some nice info. 
+	cout << "Wrote "<< train.size() <<" training images, ";
+	cout << valid.size() << " validation images" << endl;
+	cout << "class stats:\n";
+	for (int i =0; i < countC.size(); i++) {
+		cout << "\t " << i << " " << countC[i] << endl;
+	}
 	return 0; 
 }
