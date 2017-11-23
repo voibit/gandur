@@ -132,7 +132,6 @@ int main(int argn, char** argv) {
         dets.clear();
     	if(cap.read(image)) {
 
-<<<<<<< HEAD
         resize(image, image, Size(), 0.5, 0.5);
 
     	net->Detect(image);
@@ -148,13 +147,11 @@ int main(int argn, char** argv) {
 
 
         imshow("Gandur",imdet);
-=======
             net->Detect(image);     ///> Use Gandur to detect in image
             dets = net->detections; ///> get detections from Gandur.
 
             ///> Show image with detections
     	imshow("Gandur",drawDetections(image,dets));
->>>>>>> f5d0cb6810146b34f3c205d1e5fc1723f1ce0c30
 
             /**
              * Do not exit if filetype is image
