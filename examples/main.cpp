@@ -1,4 +1,5 @@
 #include "gandur.hpp"
+#include <chrono>
 
 using namespace cv;
 
@@ -70,6 +71,14 @@ bool ext(const std::string &file,const std::string &ext) {
 }
 
 int main(int argn, char** argv) {
+
+    typedef std::chrono::high_resolution_clock Time;
+    typedef std::chrono::milliseconds ms;
+    typedef std::chrono::duration<float> fsec;
+    auto t0 = Time::now();
+    auto t1 = Time::now();
+
+
     const String keys =
             "{help h ?          |       | print this message        }"
                     "{thresh            |       | detection threshold       }"
@@ -91,6 +100,7 @@ int main(int argn, char** argv) {
 	auto *net = new Gandur();
 	Mat image; 
 
+
 	VideoCapture cap ( file );
     if( ! cap.isOpened () )  
     {
@@ -103,13 +113,25 @@ int main(int argn, char** argv) {
     }
 
     while(true) {
+        t0 = Time::now();
         dets.clear();
     	if(cap.read(image)) {
 
+        resize(image, image, Size(), 0.5, 0.5);
+
     	net->Detect(image);
     	dets = net->detections;
+        t1 = Time::now();
+        fsec fs = t1 - t0;
+        ms d = std::chrono::duration_cast<ms>(fs);
+        Mat imdet = drawDetections(image,dets);
+        double fps =1/(d.count()/1000.);
+        putText(imdet, std::to_string(fps)+" fps", Point(10,50), FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
+        putText(imdet, std::to_string(fps)+" fps", Point(10-2,50-1), FONT_HERSHEY_DUPLEX, 1, CV_RGB(70, 250, 20), 1, CV_AA);
 
-    	imshow("Gandur",drawDetections(image,dets));
+
+
+        imshow("Gandur",imdet);
 
         int k = waitKey(
             ext(file, "jpg") ||
