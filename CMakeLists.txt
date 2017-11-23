@@ -15,7 +15,7 @@ include_directories(${DARKNET}/include)
 include_directories(${DARKNET}/src)
 include_directories(. examples)
 
-# Remove these three lines if darknet lib is compiled without gpu
+# Remove these three lines if darknet lib was compiled without gpu
 add_definitions(-DGPU)
 add_definitions(-DCUDNN)
 include_directories(${CUDA}/include)
@@ -31,6 +31,8 @@ add_executable(small examples/small.cpp)
 add_executable(trainlist examples/trainlist.cpp)
 add_executable(valid examples/validate.cpp gandur.cpp)
 
+add_executable(valid1 examples/validate1.cpp gandur.cpp)
+
 add_library(gandr SHARED gandur.cpp)
 
 target_link_libraries(gandur ${ALL})
@@ -39,4 +41,5 @@ target_link_libraries(imgdet ${ALL})
 target_link_libraries(trainlist ${CVB})
 target_link_libraries(small ${CVB})
 target_link_libraries(valid ${ALL})
+target_link_libraries(valid1 ${ALL})
 target_link_libraries(gandr ${ALL})
