@@ -1,5 +1,11 @@
 #include "gandur.hpp"
 
+/**
+ * Extends Ganudur
+ * Adds validation fuctionality
+
+ */
+//TODO: Add threads, and multigpu support
 class Valid : public Gandur {
 public:
     bool validate(path backupdir, path validfile);
@@ -9,7 +15,6 @@ int main(int argc, char **argv) {
     path p(argc > 1 ? argv[1] : ".");
     path validlist(argc > 2 ? argv[2] : "");
 
-    //cuda_set_device(1);
     auto *net = new Valid();
     net->validate(p, validlist);
     return 0;
@@ -164,7 +169,6 @@ bool Valid::validate(path backupdir, path validfile) {
         cout << weight.filename() << "\t Avg iou:" << avg_iou * 100 / total << "\t mAP:" << 100. * correct / total
              << std::endl;
 
-        
     } // weights loop
     ofile.close();
 }

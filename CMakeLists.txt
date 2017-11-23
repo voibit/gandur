@@ -15,10 +15,17 @@ include_directories(${DARKNET}/include)
 include_directories(${DARKNET}/src)
 include_directories(. examples)
 
+<<<<<<< HEAD
 # Remove these three lines if darknet lib was compiled without gpu
 add_definitions(-DGPU)
 add_definitions(-DCUDNN)
 include_directories(${CUDA}/include)
+=======
+# Remove these three lines if darknet lib is compiled without gpu
+# add_definitions(-DGPU)
+# add_definitions(-DCUDNN)
+# include_directories(${CUDA}/include)
+>>>>>>> f5d0cb6810146b34f3c205d1e5fc1723f1ce0c30
 
 link_directories(${DARKNET})
 set(CVB ${OpenCV_LIBS} ${Boost_LIBRARIES})

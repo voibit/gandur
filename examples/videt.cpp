@@ -13,7 +13,10 @@ int seeker = 0;
 bool seek = false;
 bool moveSeek = false;
 
-static void setSeek( int, void* )
+/**
+ * Set control varaible, if seeking.
+ */
+static void setSeek(int, void* )
 {
     if (!moveSeek) seek = true;
     else moveSeek = false;
@@ -21,10 +24,13 @@ static void setSeek( int, void* )
 
 int main(int argc, char** argv) {
 
+    ///> Get mediafile from commandline argument
     path p(argc>1? argv[1] : "mediafile.mp4");
 
-    path filename = p.filename();
-    p = canonical(p).parent_path();
+    path filename = p.filename();   ///> Use onlu filename,
+    p = canonical(p).parent_path(); ///> Get full path of file.
+
+    ///> Make save directory if it does not exist
     if (!is_directory(p / "ok")) create_directory(p / "ok");
 	
     Mat srcImg, image;
@@ -53,7 +59,8 @@ int main(int argc, char** argv) {
     p/="ok"; 
     //get highest number in folder
     int i=0;
-    //Find highest index of saved images 
+
+    ///> Find highest index of saved images
     for(auto& entry : directory_iterator(p)) {
         path readfile=entry.path();
         readfile.replace_extension("");
@@ -80,32 +87,34 @@ int main(int argc, char** argv) {
             cap.set(CAP_PROP_POS_FRAMES,frame);
         }
         else {
-            //move trackbar without seeking video 
+            ///> move trackbar without seeking video
+            ///> to indicate where in video you are
             if (frame %120==0){
                 moveSeek =true;
                 setTrackbarPos("seek", "Gandur",frame); 
             } 
         }
 
+        ///> Resize image for better viewing
         double f = srcImg.cols / (double)srcImg.rows;
-        
         resize(srcImg, image, cv::Size(720,(int)(720./f)), 1, 1, CV_INTER_LINEAR);
-
         double scale = (double)image.cols / srcImg.cols;
 
         //image=srcImg.clone();
     	//net->Detect(srcImg,0.6, 0.5);
         //image = net->drawDetections();
-        
+
+        ///> Draw boxes to indicate what in video gets dumped.
         for (auto box : boxes) {
             rectangle(image, box, CV_RGB(255, 0, 0), 2);
         }
-
+        ///> Show image with boxes
     	imshow("Gandur",image);
-        int k = waitKey(10);
 
+        ///> Keyboard commands
+        int k = waitKey(10);
 		if(k==27) break;
-        else if(k=='a') {
+        else if (k == 'a') {   ///> Add box to dump in video.
             while (1) {
                 Rect test = selectROI("Gandur",image);
                 if (test.width!=0 && test.height!=0) {
@@ -115,34 +124,31 @@ int main(int argc, char** argv) {
                 }
                 else break;
             }
-	    }
-        else if(k=='c') {
+	    } else if (k == 'c') {   ///> Clear all dump boxes
             boxes.clear();
-        }
-        else if(k==' ') {
+        } else if (k == ' ') {   ///> Space, save each box if frame.
 
             if (boxes.size()==0) {
                 boxes.push_back(Rect(0,0,image.cols,image.rows));
             }
-            
+
             for (auto box : boxes) {
                 std::string newName=fname+"_"+std::to_string(i)+".jpg";
                 std::cout <<"trying to save image... nr:" << i << ", " << newName<< "\n";
                 Rect sizedBox;
-                sizedBox.x = box.x / scale ;
+                ///> Save box with original resolution
+                sizedBox.x = box.x / scale;
                 sizedBox.y = box.y / scale;
                 sizedBox.width = box.width  / scale;
                 sizedBox.height = box.height / scale;
-
+                ///> Display some information i terminal
                 cout << "x:" << box.x << " sc:" << sizedBox.x << endl;
-
                 cout << "w:" << box.width << " sc:" << sizedBox.width << endl;
-
+                ///> Dump image.
                 imwrite((p/newName).string(),srcImg(sizedBox),compression_params);
                 i++;
             }
-        }
-        else if(k=='f') {
+        } else if (k == 'f') {       ///> Display current frame position
             std::cout << cap.get(CV_CAP_PROP_POS_FRAMES) << std::endl;
         }
 
