@@ -1,3 +1,12 @@
+/**
+ *	@file videt.cpp
+ *	videt, https://github.com/voibit/gandur/examples/videt.cpp
+ *	@brief program to dump frames from video
+ *	@author Jan-Kristian Mathisen
+ *	@author Joachim Lowzow
+ */
+//TODO: Network is disabled.
+
 //#include "gandur.hpp"
 #include <iostream>
 #include <vector>
@@ -10,8 +19,8 @@ using std::cout;
 using std::endl;
 
 int seeker = 0;
-bool seek = false;
-bool moveSeek = false;
+bool seek = false;      ///> Used to seek video
+bool moveSeek = false;  ///> Used not to seek video when moving seeker
 
 /**
  * Set control varaible, if seeking.
@@ -25,38 +34,35 @@ static void setSeek(int, void* )
 int main(int argc, char** argv) {
 
     ///> Get mediafile from commandline argument
-    path p(argc>1? argv[1] : "mediafile.mp4");
+    path p(argc > 1 ? argv[1] : "mediafile.mp4");
 
     path filename = p.filename();   ///> Use onlu filename,
     p = canonical(p).parent_path(); ///> Get full path of file.
 
     ///> Make save directory if it does not exist
     if (!is_directory(p / "ok")) create_directory(p / "ok");
-	
+
     Mat srcImg, image;
     std::vector<Rect> boxes;
     std::vector<int> compression_params;
     compression_params.push_back(IMWRITE_JPEG_QUALITY);
     compression_params.push_back(100);
 
-	VideoCapture cap ( (p/filename).string() );
+    ///> Open video file or stream
+    VideoCapture cap((p / filename).string());
     int n=0;
-
-    if( ! cap.isOpened () )  
+    if (!cap.isOpened()   ///> Something went wrong
     {
-        std::cout << "Could not open file: "<< p << std::endl; 
+        std::cout << "Could not open file: " << p << std::endl;
         return -1;
     }
-    namedWindow("Gandur",WINDOW_AUTOSIZE);
-    moveWindow("Gandur",0,0);
+    namedWindow("Gandur", WINDOW_AUTOSIZE);
+    moveWindow("Gandur", 0, 0);
 
-
-    std::cout << "GANDUR YEAH!\n";
- 
     //Gandur *net = new Gandur();
     filename.replace_extension("");
-    std::string fname = filename.string(); 
-    p/="ok"; 
+    std::string fname = filename.string();
+    p/="ok";
     //get highest number in folder
     int i=0;
 
@@ -65,17 +71,19 @@ int main(int argc, char** argv) {
         path readfile=entry.path();
         readfile.replace_extension("");
 
+        /**
+         * do some string magic to determin highest number of current filename
+         * dumps
+         */
         std::string name = readfile.filename().string();
-
-        int j = atoi(name.substr(name.find("_")+1).c_str());
-
+        int j = atoi(name.substr(name.find("_") + 1).c_str());
         std::string first = name.substr(0, name.find("_"));
-
-        if (j > i && fname==first) i=j+1;
+        if (j > i && fname == first) i= j + 1;
 
     }
+    ///> Get total numbers of frames in video (if possible?)
     int frames = cap.get(CAP_PROP_FRAME_COUNT);
-    createTrackbar("seek","Gandur", &seeker, frames, setSeek);
+    createTrackbar("seek", "Gandur", &seeker, frames, setSeek);
     int frame = 0;
 
     while(cap.read(srcImg)) {
@@ -84,24 +92,22 @@ int main(int argc, char** argv) {
         if (seek) {
             seek=false;
             frame = seeker;
-            cap.set(CAP_PROP_POS_FRAMES,frame);
-        }
-        else {
+            cap.set(CAP_PROP_POS_FRAMES, frame);
+        } else {
             ///> move trackbar without seeking video
             ///> to indicate where in video you are
-            if (frame %120==0){
+            if (frame % 120 == 0){
                 moveSeek =true;
-                setTrackbarPos("seek", "Gandur",frame); 
-            } 
+                setTrackbarPos("seek", "Gandur",frame);
+            }
         }
-
         ///> Resize image for better viewing
         double f = srcImg.cols / (double)srcImg.rows;
         resize(srcImg, image, cv::Size(720,(int)(720./f)), 1, 1, CV_INTER_LINEAR);
         double scale = (double)image.cols / srcImg.cols;
 
         //image=srcImg.clone();
-    	//net->Detect(srcImg,0.6, 0.5);
+        //net->Detect(srcImg,0.6, 0.5);
         //image = net->drawDetections();
 
         ///> Draw boxes to indicate what in video gets dumped.
@@ -109,22 +115,21 @@ int main(int argc, char** argv) {
             rectangle(image, box, CV_RGB(255, 0, 0), 2);
         }
         ///> Show image with boxes
-    	imshow("Gandur",image);
+        imshow("Gandur",image);
 
         ///> Keyboard commands
         int k = waitKey(10);
-		if(k==27) break;
+        if(k==27) break;
         else if (k == 'a') {   ///> Add box to dump in video.
             while (1) {
                 Rect test = selectROI("Gandur",image);
                 if (test.width!=0 && test.height!=0) {
                     boxes.push_back(test);
                     rectangle(image, test, CV_RGB(0,255,0),2);
-                    imshow("Gandur",image);  
-                }
-                else break;
+                    imshow("Gandur",image);
+                } else break;
             }
-	    } else if (k == 'c') {   ///> Clear all dump boxes
+        } else if (k == 'c') {   ///> Clear all dump boxes
             boxes.clear();
         } else if (k == ' ') {   ///> Space, save each box if frame.
 
@@ -155,5 +160,5 @@ int main(int argc, char** argv) {
     } //detectionloop
     std::cout << "Cant read image / end of video..\n";
 
-	return 0;
+    return 0;
 }

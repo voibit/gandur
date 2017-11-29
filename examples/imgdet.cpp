@@ -281,12 +281,12 @@ void draw() {
     //draw picnr
     string picnr = "|" + to_string(current + 1) + ":" + to_string(count);
     picnr += "| " + imgName.string();
-    putText(img, picnr, Point(0, 20), FONT_HERSHEY_DUPLEX, 0.5, CV_RGB(30, 230, 150), 1, CV_AA);
+    putText(img, picnr, Point(0, 20), 2, 0.5, CV_RGB(30, 230, 150), 1, CV_AA);
 
     //Draw message
-    Size textSize = getTextSize(message, FONT_HERSHEY_DUPLEX, 0.5, 1, 0);
+    Size textSize = getTextSize(message, 2, 0.5, 1, 0);
     putText(img, message, Point(img.cols - textSize.width, 20),
-            FONT_HERSHEY_DUPLEX, 0.5, CV_RGB(30, 230, 150), 1,
+            2, 0.5, CV_RGB(30, 230, 150), 1,
             CV_AA);
 
     //Draw detections

@@ -1,3 +1,10 @@
+/**
+ *	@file main.cpp
+ *	testprogram, https://github.com/voibit/gandur/examples/main.cpp
+ *	@brief Program to test the gandur class
+ *	@author Jan-Kristian Mathisen
+ *	@author Joachim Lowzow
+ */
 #include "gandur.hpp"
 #include <chrono>
 
@@ -28,23 +35,23 @@ Mat drawDetections(Mat img, std::vector<Detection> &dets) {
         Point posLabel = det.box.tl();  ///> top left position of box
 
         ///> Place shaddow.
-        putText(img, det.label, posLabel, FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
+        putText(img, det.label, posLabel, 2, 1, CV_RGB(0, 0, 0), 1, CV_AA);
 
         ///> Move
         posLabel.x-=2;
         posLabel.y-=1;
 
         ///> Place label in front of shadow.
-        putText(img, det.label, posLabel, FONT_HERSHEY_DUPLEX, 1, CV_RGB(70, 250, 20), 1, CV_AA);
+        putText(img, det.label, posLabel, 2, 1, CV_RGB(70, 250, 20), 1, CV_AA);
 
         ///> Place probability shadow to the left of label.
         posLabel.x-=55;
-        putText(img, prob, posLabel, FONT_HERSHEY_DUPLEX, 0.7, CV_RGB(0, 0, 0), 1, CV_AA);
+        putText(img, prob, posLabel, 2, 0.7, CV_RGB(0, 0, 0), 1, CV_AA);
 
         ///> Draw probpability over shadow
         posLabel.x-=1;
         posLabel.y-=1;
-        putText(img, prob, posLabel, FONT_HERSHEY_DUPLEX, 0.7, CV_RGB(70, 200, 0), 1, CV_AA);
+        putText(img, prob, posLabel, 2, 0.7, CV_RGB(70, 200, 0), 1, CV_AA);
 
         ///> Draw line to detecton box.
         //Draw line from bottom 
@@ -116,9 +123,8 @@ int main(int argn, char** argv) {
     Mat image;                          ///> Matrix to store frame / image
 
 
-	VideoCapture cap ( file );
-    if( ! cap.isOpened () )  
-    {
+    VideoCapture cap ( file );
+    if( ! cap.isOpened () ) {
         cout << "Could not load av-file: " << file << endl;
         return -1;
     }
@@ -130,45 +136,46 @@ int main(int argn, char** argv) {
     while(true) {
         t0 = Time::now();
         dets.clear();
-    	if(cap.read(image)) {
+        if(cap.read(image)) {
 
-        resize(image, image, Size(), 0.5, 0.5);
+            resize(image, image, Size(), 0.5, 0.5);
 
-    	net->Detect(image);
-    	dets = net->detections;
-        t1 = Time::now();
-        fsec fs = t1 - t0;
-        ms d = std::chrono::duration_cast<ms>(fs);
-        Mat imdet = drawDetections(image,dets);
-        double fps =1/(d.count()/1000.);
-        putText(imdet, std::to_string(fps)+" fps", Point(10,50), FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
-        putText(imdet, std::to_string(fps)+" fps", Point(10-2,50-1), FONT_HERSHEY_DUPLEX, 1, CV_RGB(70, 250, 20), 1, CV_AA);
+            net->Detect(image);
+            dets = net->detections;
+            t1 = Time::now();
+            fsec fs = t1 - t0;
+            ms d = std::chrono::duration_cast<ms>(fs);
+            Mat imdet = drawDetections(image, dets);
+            double fps = 1 / (d.count() / 1000.);
+            ///> Add
+            putText(imdet, std::to_string(fps) + " fps",
+                    Point(10, 50), 2, 1, CV_RGB(0, 0, 0), 1, CV_AA);
+            putText(imdet, std::to_string(fps) + " fps",
+                    Point(10 - 2, 50 - 1), 2, 1, CV_RGB(70, 250, 20), 1, CV_AA);
 
 
-
-        imshow("Gandur",imdet);
+            imshow("Gandur", imdet);
             net->Detect(image);     ///> Use Gandur to detect in image
             dets = net->detections; ///> get detections from Gandur.
 
             ///> Show image with detections
-    	imshow("Gandur",drawDetections(image,dets));
+            imshow("Gandur", drawDetections(image, dets));
 
             /**
              * Do not exit if filetype is image
              * Go to next frame if video.
              */
-        int k = waitKey(
-            ext(file, "jpg") ||
-            ext(file, "JPG") ||
-            ext(file, "JPE") ||
-            ext(file, "png") ? 0 : 10 );
-		if(k==27) break;
-	    }
-	    else {
+            int k = waitKey(
+                    ext(file, "jpg") ||
+                    ext(file, "JPG") ||
+                    ext(file, "JPE") ||
+                    ext(file, "png") ? 0 : 10 );
+            if(k==27) break;
+        } else {
             cout << "End of file.. exiting.." << endl;
             break; ///> Breaks the while loop when no more frames to process.
-	    }
+        }
 
     } //end detection loop
-	return 0;
+    return 0;
 }
