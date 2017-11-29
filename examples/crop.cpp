@@ -44,7 +44,10 @@ vector<path> getImgs(path p);			///< Finds images in directory
 size_t cnt = 0;							///< number of images to loop trough
 size_t current = 0;						///< iteration number
 
-
+	/**
+	 * @param x x-coordinate for click
+	 * @param y y-coordiante for click
+	 */
 static void on_mouse(int event, int x, int y, int flags, void* ){
 	if (event == CV_EVENT_LBUTTONDOWN)
 	{
@@ -78,6 +81,10 @@ bool loadNext(){
 	return ret;
 	}
 
+	/**
+	 * @param i image number
+	 */
+
 void loadimg(size_t i){
 	nextImgName=imgs[i].filename();
 	nextImage = imread(imgs[i].string());
@@ -86,6 +93,11 @@ void loadimg(size_t i){
 void show(){
 	imshow("crop", currentImage);
 	}
+
+	/**
+	 * @param x x-coordinate for mouse click
+	 * @param y y-coordinate for mouse click
+	 */
 
 void icrop(int x, int y){
 	int xx, yy;
@@ -112,6 +124,12 @@ void icrop(int x, int y){
 	imshow("crop", copyImage);
 }
 
+	/**
+	 * @param x x-coordinate for midle of rectangle
+	 * @param y y-coordinate for midle of rectangle
+	 * @param image image to draw on
+	 */
+
 void makeRect(int x,int y, Mat &image){
 	if(currentImage.cols < netx) netx = currentImage.cols;
 	if(currentImage.rows < nety) nety = currentImage.rows;
@@ -123,10 +141,21 @@ void makeRect(int x,int y, Mat &image){
 	rectangle(image, r, 1, 8, 0);
 }
 
+	/**
+	 * @param f filename to save crop
+	 * @param i image number
+	 * @param dir directory
+	 * @param image image to save
+	 */
+
 void saveCrop(path f, int i, path dir, Mat image){
 	std::cout << dir.string()+"/"+f.stem().string()+"_"+to_string(i)+".bmp" << std::endl;
 	imwrite(dir.string()+"/"+f.stem().string()+"_"+to_string(i)+".bmp", image);
 }
+
+	/**
+	 * @param p file to check
+	 */
 
 bool isImg(path p) {
 	string ext=extension(p);
@@ -141,6 +170,10 @@ bool isImg(path p) {
 	ret |= ext==".bmp";
 	return ret;
 }
+
+/**
+ * @param p directory to load
+ */
 
 vector<path> getImgs(path p) {
 	vector<path> tmp;
