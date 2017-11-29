@@ -27,22 +27,22 @@ Point p;
 int cropNr = 0;			///< Counter for number of crops in an image
 
 static void on_mouse(int, int, int, int, void*); 	///< Handler for mouse click
-void icrop(int, int);								///< Cropps current rectangle
-bool loadNext();									///< Loads next image
-void Next();										///< Shows next image
-void loadimg(size_t);								///< loads an image
+void icrop(int, int);						///< Cropps current rectangle
+bool loadNext();							///< Loads next image
+void Next();								///< Shows next image
+void loadimg(size_t);						///< loads an image
 void saveCrop(path f, int i, path dir, Mat image);	///< saves a crop
-void makeRect(int x,int y, Mat &image);				///< Draws a rectangle on an image
+void makeRect(int x,int y, Mat &image);		///< Draws a rectangle on an image
 
-path workPath;							///< where to look for images
-path savePath;							///< where to save the crops
-path nextImgName;						///< Path for next image to be loaded
-path imgName;							///< Path for current image
-vector<path> imgs;						///< Stores images in directory					
-vector<path> getImgs(path p);			///< Finds images in directory
+path workPath;			///< where to look for images
+path savePath;			///< where to save the crops
+path nextImgName;		///< Path for next image to be loaded
+path imgName;			///< Path for current image
+vector<path> imgs;		///< Stores images in directory					
+vector<path> getImgs(path p);	///< Finds images in directory
 
-size_t cnt = 0;							///< number of images to loop trough
-size_t current = 0;						///< iteration number
+size_t cnt = 0;			///< number of images to loop trough
+size_t current = 0;		///< iteration number
 
 	/**
 	 * @param x x-coordinate for click
