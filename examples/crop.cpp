@@ -1,3 +1,12 @@
+/**
+ *	@file crop.cpp
+ *	Crop, https://github.com/voibit/gandur/examples
+ *	@brief C++ program for cropping rectangles with presett size
+ *	@author Jan-Kristian Mathisen
+ *	@author Joachim Lowzow
+ */
+
+
 #include <opencv2/opencv.hpp>
 #include <opencv2/tracking.hpp>
 #include <algorithm>
@@ -7,34 +16,34 @@ using namespace std;
 using namespace cv;
 using namespace boost::filesystem;
 
-int netx = 608;
-int nety = 608;
-Mat currentImage;
-Mat nextImage;
-Mat croppedImage;
-Mat copyImage;
-string m_winname;
+int netx = 608;			///< height of neural net
+int nety = 608;			///< width of neural net
+Mat currentImage;		///< Image displayed
+Mat nextImage;			///< Next image to display
+Mat croppedImage;		///< Buffer for cropped image
+Mat copyImage;			///< The image we are working on
+string m_winname;		///< Name of the window
 Point p;
-int cropNr = 0;
+int cropNr = 0;			///< Counter for number of crops in an image
 
-static void on_mouse(int, int, int, int, void*);
-void icrop(int, int);
-bool loadNext();
-void Prev();
-void Next();
-void loadimg(size_t);
-void saveCrop(path f, int i, path dir, Mat image);
-void makeRect(int x,int y, Mat &image);
+static void on_mouse(int, int, int, int, void*); 	///< Handler for mouse click
+void icrop(int, int);								///< Cropps current rectangle
+bool loadNext();									///< Loads next image
+void Next();										///< Shows next image
+void loadimg(size_t);								///< loads an image
+void saveCrop(path f, int i, path dir, Mat image);	///< saves a crop
+void makeRect(int x,int y, Mat &image);				///< Draws a rectangle on an image
 
-path workPath;
-path savePath;
-path nextImgName;
-path imgName;
-vector<path> imgs;
-vector<path> getImgs(path p);
+path workPath;							///< where to look for images
+path savePath;							///< where to save the crops
+path nextImgName;						///< Path for next image to be loaded
+path imgName;							///< Path for current image
+vector<path> imgs;						///< Stores images in directory					
+vector<path> getImgs(path p);			///< Finds images in directory
 
-size_t cnt = 0;
-size_t current = 0;
+size_t cnt = 0;							///< number of images to loop trough
+size_t current = 0;						///< iteration number
+
 
 static void on_mouse(int event, int x, int y, int flags, void* ){
 	if (event == CV_EVENT_LBUTTONDOWN)
