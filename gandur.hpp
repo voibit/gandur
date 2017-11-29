@@ -126,6 +126,8 @@ public:
     void loadWeights(path p); ///< Load new weights to network @param p path to weights file
 
     vector<Detection> detections;       ///< Vector filled after detect()
+    
+    bool loadVars();      ///< Initilizes darknet detection variables,
 
 protected:
     Cfg cfg;              ///< Config file
@@ -141,7 +143,6 @@ protected:
     float **masks;        ///<[nboxes][classes?] ?
     list *options;        ///<[] Options read from config file.
 
-    bool loadVars();      ///< Initilizes darknet detection variables,
 
     //Some load functions for extra flexibility
     bool loadCfg(path p);           ///< Load config @param p path to config file.

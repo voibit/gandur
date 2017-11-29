@@ -66,7 +66,7 @@ void Gandur::loadWeights(path p) {
 
 bool Gandur::loadVars() {
     //return true if already loaded.
-    if (probs != nullptr) {
+    if (net != nullptr) {
         return true;
     }
     size_t j;
@@ -190,6 +190,7 @@ cv::Mat Gandur::resizeLetterbox(const cv::Mat &input) {
 }
 
 vector<string> Gandur::getClasses() {
+    loadVars();
     vector<string> v(classNames, classNames+l.classes);
     return v;
 }

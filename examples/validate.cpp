@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
 }
 
 bool Valid::validate(path backupdir, path validfile) {
+    loadVars();
 
     path cfgname = cfg.netCfg.filename();
     cfgname.replace_extension("");

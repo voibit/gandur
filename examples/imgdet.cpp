@@ -56,7 +56,9 @@ int main(int argc, char**argv){
 	}
 	workPath=canonical(workPath);
 
-	net = new Gandur(); 
+	net = new Gandur();
+
+
 	imgs = getImgs(workPath); 
 	count = imgs.size();
 	if (count == 0) {
@@ -66,7 +68,7 @@ int main(int argc, char**argv){
 	if (!is_directory(savePath)) create_directory(savePath);
 
 	savePath=canonical(savePath);
-	
+
 	classes = net->getClasses();
 
 	loopImgs(start);
@@ -306,12 +308,12 @@ bool label() {
      * Keyboard numbers stars on 48 in the  ascii table
      * Handle that.
      */
+
 	if (k > 47 && k < 48 + classes.size()) {
 		int id = k - 48;
 
 		message = classes[id];
 		draw();
-
         ///> Use the mouse to draw box around objects.
 		Rect box = selectROI("Gandur", img);
 

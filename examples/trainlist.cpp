@@ -131,11 +131,10 @@ int main(int argc, char **argv) {
 			if(checkFile(entry.path()) ) {
 				string imgpath = canonical(entry).string();
 
+				countP(imgpath, countC); ///> Count different classes.
 				///> Add to valid or trainlist
 				if (isValid(imgpath, prob)) valid.push_back(imgpath);
 				else train.push_back(imgpath);
-
-				countP(imgpath, countC); ///> Count different classes.
 			}	
 		}
 	}
