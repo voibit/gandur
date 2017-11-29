@@ -27,10 +27,10 @@ Point p;
 int cropNr = 0;			///< Counter for number of crops in an image
 
 static void on_mouse(int, int, int, int, void*); 	///< Handler for mouse click
-void icrop(int, int);						///< Cropps current rectangle
-bool loadNext();							///< Loads next image
-void Next();								///< Shows next image
-void loadimg(size_t);						///< loads an image
+void icrop(int, int);					///< Cropps current rectangle
+bool loadNext();					///< Loads next image
+void Next();						///< Shows next image
+void loadimg(size_t);					///< loads an image
 void saveCrop(path f, int i, path dir, Mat image);	///< saves a crop
 void makeRect(int x,int y, Mat &image);		///< Draws a rectangle on an image
 
