@@ -11,7 +11,6 @@
 using namespace cv;
 #define FPS
 
-
 /**
  * Draws detection over the image.
  * @param img

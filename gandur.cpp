@@ -1,8 +1,10 @@
-/*************************************************************************
- * Gandur, https://github.com/voibit/gandu                               *
- * C++ API for Yolo v2                                                   *                                                                   *
- * Forked from arapaho, https://github.com/prabindh/darknet              *
- *************************************************************************/
+/**
+ *	@file gandur.cpp
+ *	gandur, https://github.com/voibit/gandur/gandur.cpp
+ *	@brief c++ wrapper for Darknet
+ *	@author Jan-Kristian Mathisen
+ *	@author Joachim Lowzow
+ */
 #include "gandur.hpp"
 
 
@@ -46,10 +48,14 @@ bool Gandur::loadCfg(path p) {
         options = nullptr;
     } else options = read_data_cfg((char *) p.c_str());
 
-    cfg.names = option_find_str(options, (char *) "names", (char *) "data/names.list");
-    cfg.netCfg = option_find_str(options, (char *) "networkcfg", (char *) "data/net.cfg");
-    cfg.weights = option_find_str(options, (char *) "weights", (char *) "data/net.weights");
-    cfg.thresh = option_find_float(options, (char *) "thresh", 0.5);
+    cfg.names = option_find_str(
+            options, (char *) "names", (char *) "data/names.list");
+    cfg.netCfg = option_find_str(
+            options, (char *) "networkcfg", (char *) "data/net.cfg");
+    cfg.weights = option_find_str(
+            options, (char *) "weights", (char *) "data/net.weights");
+    cfg.thresh = option_find_float(
+            options, (char *) "thresh", 0.5);
     cfg.treeThresh = option_find_float(options, (char *) "tree-thresh", 0.5);
 
     if (cfg.check()) {
@@ -89,7 +95,9 @@ bool Gandur::loadVars() {
     //From darknet, not shure what it does yet.
     if (l.coords > 4) {
         masks = (float **) calloc(nboxes, sizeof(float *));
-        for (j = 0; j < nboxes; ++j) masks[j] = (float *) calloc(l.coords - 4, sizeof(float));
+        for (j = 0; j < nboxes; ++j) {
+            masks[j] = (float *) calloc(l.coords - 4, sizeof(float));
+        }
     }
     // Error exits
     if(!boxes || !probs) {
@@ -178,13 +186,16 @@ cv::Mat Gandur::resizeLetterbox(const cv::Mat &input) {
 
     double h1 = dstSize.width * (input.rows/(double)input.cols);
     double w2 = dstSize.height * (input.cols/(double)input.rows);
-    if (h1 <= dstSize.height) cv::resize(input, output, cv::Size(dstSize.width, h1));
+    if (h1 <= dstSize.height) {
+        cv::resize(input, output, cv::Size(dstSize.width, h1));
+    }
     else cv::resize(input, output, cv::Size(w2, dstSize.height));
     int top = (dstSize.height-output.rows) / 2;
     int down = (dstSize.height-output.rows+1) / 2;
     int left = (dstSize.width - output.cols) / 2;
     int right = (dstSize.width - output.cols+1) / 2;
-    cv::copyMakeBorder(output, output, top, down, left, right, cv::BORDER_CONSTANT, bgcolor);
+    cv::copyMakeBorder(
+            output, output, top, down, left, right, cv::BORDER_CONSTANT, bgcolor);
 
     return output;
 }
@@ -231,7 +242,9 @@ void Gandur::__Detect(float *inData, float thresh, float treeThresh) {
      * @param [in] treeThresh detection threshold for tree type detection
      * @param [in] relative ?
      */
-    get_region_boxes(l, img.cols, img.rows, net->w, net->h, thresh, probs, boxes, masks, 0, nullptr, treeThresh, 1);
+    get_region_boxes(l, img.cols, img.rows,
+                     net->w, net->h, thresh, probs,
+                     boxes, masks, 0, nullptr, treeThresh, 1);
     /**
      * Sort tree predictions
      */
