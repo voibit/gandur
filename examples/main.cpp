@@ -2,6 +2,8 @@
 #include <chrono>
 
 using namespace cv;
+#define FPS
+
 
 /**
  * Draws detection over the image.
@@ -10,8 +12,6 @@ using namespace cv;
  * @return
  */
 Mat drawDetections(Mat img, std::vector<Detection> &dets) {
-
-
     for (Detection det : dets) { ///> For each detection do;
         /*
         //Calculate degrees.
@@ -28,23 +28,23 @@ Mat drawDetections(Mat img, std::vector<Detection> &dets) {
         Point posLabel = det.box.tl();  ///> top left position of box
 
         ///> Place shaddow.
-        putText(img, det.label, posLabel, FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
+        putText(img, det.label, posLabel, 2, 1, CV_RGB(0, 0, 0), 1, CV_AA);
 
         ///> Move
         posLabel.x-=2;
         posLabel.y-=1;
 
         ///> Place label in front of shadow.
-        putText(img, det.label, posLabel, FONT_HERSHEY_DUPLEX, 1, CV_RGB(70, 250, 20), 1, CV_AA);
+        putText(img, det.label, posLabel, 2, 1, CV_RGB(70, 250, 20), 1, CV_AA);
 
         ///> Place probability shadow to the left of label.
         posLabel.x-=55;
-        putText(img, prob, posLabel, FONT_HERSHEY_DUPLEX, 0.7, CV_RGB(0, 0, 0), 1, CV_AA);
+        putText(img, prob, posLabel, 2, 0.7, CV_RGB(0, 0, 0), 1, CV_AA);
 
         ///> Draw probpability over shadow
         posLabel.x-=1;
         posLabel.y-=1;
-        putText(img, prob, posLabel, FONT_HERSHEY_DUPLEX, 0.7, CV_RGB(70, 200, 0), 1, CV_AA);
+        putText(img, prob, posLabel, 2, 0.7, CV_RGB(70, 200, 0), 1, CV_AA);
 
         ///> Draw line to detecton box.
         //Draw line from bottom 
@@ -65,11 +65,11 @@ Mat drawDetections(Mat img, std::vector<Detection> &dets) {
 
         posDegree.x+=50;
         putText(img, str, posDegree,
-                FONT_HERSHEY_DUPLEX, 1.3, CV_RGB(0, 0, 0), 2, CV_AA);
+                2, 1.3, CV_RGB(0, 0, 0), 2, CV_AA);
         posDegree.x-=2;
         posDegree.y-=1;         
         putText(img, str, posDegree,
-                FONT_HERSHEY_DUPLEX, 1.3, CV_RGB(70, 250, 20), 1, CV_AA);
+                2, 1.3, CV_RGB(70, 250, 20), 1, CV_AA);
         */
     }
     return img;
@@ -87,17 +87,11 @@ bool ext(const std::string &file, const std::string &ext) {
 
 int main(int argn, char** argv) {
 
-    typedef std::chrono::high_resolution_clock Time;
-    typedef std::chrono::milliseconds ms;
-    typedef std::chrono::duration<float> fsec;
-    auto t0 = Time::now();
-    auto t1 = Time::now();
-
 
     const String keys =
-            "{help h ?          |       | print this message        }"
-                    "{thresh            |       | detection threshold       }"
-                    "{@file             |       | mediafile to network      }";
+        "{help h ?          |       | print this message        }"
+        "{thresh            |       | detection threshold       }"
+        "{@file             |       | mediafile to network      }";
     CommandLineParser parser(argn, argv, keys);
     parser.about("Gandur test v1.0.0");
 
@@ -115,6 +109,13 @@ int main(int argn, char** argv) {
     auto *net = new Gandur();           ///> Initilize Yolov2
     Mat image;                          ///> Matrix to store frame / image
 
+    #ifdef FPS   
+        typedef std::chrono::high_resolution_clock Time;
+        typedef std::chrono::milliseconds ms;
+        typedef std::chrono::duration<float> fsec;
+        auto t0 = Time::now();
+        auto t1 = Time::now();
+    #endif
 
 	VideoCapture cap ( file );
     if( ! cap.isOpened () )  
@@ -128,40 +129,45 @@ int main(int argn, char** argv) {
     }
 
     while(true) {
+        #ifdef FPS
         t0 = Time::now();
+        #endif
         dets.clear();
     	if(cap.read(image)) {
 
-        resize(image, image, Size(), 0.5, 0.5);
+        //resize(image, image, Size(), 0.5, 0.5);
+        
+        //Rect box(0,0, 600,400);
+        //image = image(box); 
 
     	net->Detect(image);
-    	dets = net->detections;
-        t1 = Time::now();
-        fsec fs = t1 - t0;
-        ms d = std::chrono::duration_cast<ms>(fs);
+
+        dets=net->detections;
+
         Mat imdet = drawDetections(image,dets);
-        double fps =1/(d.count()/1000.);
-        putText(imdet, std::to_string(fps)+" fps", Point(10,50), FONT_HERSHEY_DUPLEX, 1, CV_RGB(0, 0, 0), 1, CV_AA);
-        putText(imdet, std::to_string(fps)+" fps", Point(10-2,50-1), FONT_HERSHEY_DUPLEX, 1, CV_RGB(70, 250, 20), 1, CV_AA);
 
-
+        #ifdef FPS
+            t1 = Time::now();
+            fsec fs = t1 - t0;
+            ms d = std::chrono::duration_cast<ms>(fs);
+            double fps =1/(d.count()/1000.);
+            putText(imdet, std::to_string(fps)+" fps", Point(10,50), 2, 1, CV_RGB(0, 0, 0), 1, CV_AA);
+            putText(imdet, std::to_string(fps)+" fps", Point(10-2,50-1), 2, 1, CV_RGB(70, 250, 20), 1, CV_AA);   
+        #endif
 
         imshow("Gandur",imdet);
-            net->Detect(image);     ///> Use Gandur to detect in image
-            dets = net->detections; ///> get detections from Gandur.
 
-            ///> Show image with detections
-    	imshow("Gandur",drawDetections(image,dets));
-
-            /**
-             * Do not exit if filetype is image
-             * Go to next frame if video.
-             */
+        /**
+         * Do not exit if filetype is image
+         * Go to next frame if video.
+         */
+        int wait = 15;
+        //if (fps < 60) wait = 1;
         int k = waitKey(
             ext(file, "jpg") ||
             ext(file, "JPG") ||
             ext(file, "JPE") ||
-            ext(file, "png") ? 0 : 10 );
+            ext(file, "png") ? 0 : wait );
 		if(k==27) break;
 	    }
 	    else {
