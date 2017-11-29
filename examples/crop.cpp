@@ -16,21 +16,21 @@ using namespace std;
 using namespace cv;
 using namespace boost::filesystem;
 
-int netx = 608;			///< height of neural net
-int nety = 608;			///< width of neural net
-Mat currentImage;		///< Image displayed
-Mat nextImage;			///< Next image to display
-Mat croppedImage;		///< Buffer for cropped image
-Mat copyImage;			///< The image we are working on
-string m_winname;		///< Name of the window
+int netx = 608;		///< height of neural net
+int nety = 608;		///< width of neural net
+Mat currentImage;	///< Image displayed
+Mat nextImage;		///< Next image to display
+Mat croppedImage;	///< Buffer for cropped image
+Mat copyImage;		///< The image we are working on
+string m_winname;	///< Name of the window
 Point p;
-int cropNr = 0;			///< Counter for number of crops in an image
+int cropNr = 0;		///< Counter for number of crops in an image
 
-static void on_mouse(int, int, int, int, void*); 	///< Handler for mouse click
-void icrop(int, int);					///< Cropps current rectangle
-bool loadNext();					///< Loads next image
-void Next();						///< Shows next image
-void loadimg(size_t);					///< loads an image
+static void on_mouse(int, int, int, int, void*); ///< Handler for mouse click
+void icrop(int, int);				///< Cropps current rectangle
+bool loadNext();				///< Loads next image
+void Next();					///< Shows next image
+void loadimg(size_t);				///< loads an image
 void saveCrop(path f, int i, path dir, Mat image);	///< saves a crop
 void makeRect(int x,int y, Mat &image);		///< Draws a rectangle on an image
 
@@ -44,15 +44,14 @@ vector<path> getImgs(path p);	///< Finds images in directory
 size_t cnt = 0;			///< number of images to loop trough
 size_t current = 0;		///< iteration number
 
-	/**
-	 * @param x x-coordinate for click
-	 * @param y y-coordiante for click
-	 */
+/**
+* @param x x-coordinate for click
+* @param y y-coordiante for click
+*/
 static void on_mouse(int event, int x, int y, int flags, void* ){
 	if (event == CV_EVENT_LBUTTONDOWN)
 	{
 		std::cout << "@ Left mouse button pressed at: " << x << "," << y << std::endl;
-	
 		icrop(x,y);
     }
 	if (event == CV_EVENT_MOUSEMOVE){
@@ -81,9 +80,9 @@ bool loadNext(){
 	return ret;
 	}
 
-	/**
-	 * @param i image number
-	 */
+/**
+* @param i image number
+*/
 
 void loadimg(size_t i){
 	nextImgName=imgs[i].filename();
@@ -94,10 +93,10 @@ void show(){
 	imshow("crop", currentImage);
 	}
 
-	/**
-	 * @param x x-coordinate for mouse click
-	 * @param y y-coordinate for mouse click
-	 */
+/**
+* @param x x-coordinate for mouse click
+* @param y y-coordinate for mouse click
+*/
 
 void icrop(int x, int y){
 	int xx, yy;
@@ -123,13 +122,11 @@ void icrop(int x, int y){
 	rectangle(copyImage, r, 1, 8, 0);
 	imshow("crop", copyImage);
 }
-
-	/**
-	 * @param x x-coordinate for midle of rectangle
-	 * @param y y-coordinate for midle of rectangle
-	 * @param image image to draw on
-	 */
-
+/**
+* @param x x-coordinate for midle of rectangle
+* @param y y-coordinate for midle of rectangle
+* @param image image to draw on
+*/
 void makeRect(int x,int y, Mat &image){
 	if(currentImage.cols < netx) netx = currentImage.cols;
 	if(currentImage.rows < nety) nety = currentImage.rows;
@@ -137,17 +134,15 @@ void makeRect(int x,int y, Mat &image){
 	if(y < (nety/2)) y = (nety/2);
 
 	Rect r = Rect(	min(x - (netx/2), currentImage.cols - (netx)),
-					min(y - (nety/2), currentImage.rows - (nety)),  netx, nety);
+			:min(y - (nety/2), currentImage.rows - (nety)),  netx, nety);
 	rectangle(image, r, 1, 8, 0);
 }
-
-	/**
-	 * @param f filename to save crop
-	 * @param i image number
-	 * @param dir directory
-	 * @param image image to save
-	 */
-
+/**
+* @param f filename to save crop
+* @param i image number
+* @param dir directory
+* @param image image to save
+*/
 void saveCrop(path f, int i, path dir, Mat image){
 	std::cout << dir.string()+"/"+f.stem().string()+"_"+to_string(i)+".bmp" << std::endl;
 	imwrite(dir.string()+"/"+f.stem().string()+"_"+to_string(i)+".bmp", image);
