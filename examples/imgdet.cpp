@@ -129,26 +129,19 @@ vector<path> getImgs(const path &p) {
     return tmp;
 }
 
-/**
- * Go to next image
- */
+///> Go to next image
 void next() {
     if ((current + 1) < count) current++;
     show(current);
 }
 
-/**
- * Go to previous image
- */
+///> Go to previous image
 void prev() {
     if (current > 0) current--;
     show(current);
 }
 
-/**
- * Show image
- * @param image number
- */
+///> Show image @param image number
 void show(size_t i) {
     ///> Set current variables
     current = i;
@@ -229,10 +222,7 @@ bool isImg(path p) {
     return ret;
 }
 
-/**
- * Read label file
- * @param p path to label file
- */
+//> Read label file @param p path to label file
 void readTxt(path p) {
     dets.clear();
     string line;
@@ -257,9 +247,7 @@ void readTxt(path p) {
     }
 }
 
-/**
- * Draws a banner over the image, opencv magic
- */
+//> Draws a banner over the image, opencv magic
 void banner() {
     Rect box(0, 0, img.cols, 26);
     Scalar rgba(0, 0, 0, 0.7);
@@ -270,9 +258,7 @@ void banner() {
     addWeighted(color, alpha, roi, 1.0 - alpha, 0.0, roi);
 }
 
-/**
- * Draw detection boxes, classes and information over the image.
- */
+///> Draw detection boxes, classes and information over the image.
 void draw() {
     //start with a clean image
     img = origImg.clone();
@@ -313,7 +299,7 @@ void draw() {
 /**
  * Detection loop item
  * Parses keyboard commands.
- * @return
+ * @return false if user presses q or esq
  */
 bool label() {
 
@@ -407,9 +393,8 @@ Mat resized(const Mat &orig, int rsize) {
     } else cv::resize(orig, tmp, Size(rsize, rsize));
     return tmp;
 }
-/**
- * Save label and image
- */
+
+///> Save label and image
 void save() {
     if (workPath != savePath) {
         std::vector<int> compression_params;
