@@ -1,8 +1,7 @@
 /**
  *  @file gandur.hpp
- *  Gandur, https://github.com/voibit/gandur
- *  Forked from arapaho, https://github.com/prabindh/darknet
- *  @brief C++ API for Darknet and Yolov2 Deep neural network
+ *  Gandur, https://github.com/voibit/gandur.hpp
+ *  @brief C++ wrapper for Darknet
  *  @author Jan-Kristian Mathisen
  *  @author Joachim Lowzow
  */
