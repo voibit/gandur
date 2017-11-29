@@ -1,4 +1,10 @@
-
+/**
+ *	@file small.cpp
+ *	small, https://github.com/voibit/gandur/examples/small.cpp
+ *	@brief Program to dump small labeld objects from bigger
+ *	@author Jan-Kristian Mathisen
+ *	@author Joachim Lowzow
+ */
 #include <boost/filesystem.hpp>
 #include <opencv2/opencv.hpp>
 

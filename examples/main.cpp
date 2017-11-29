@@ -1,3 +1,10 @@
+/**
+ *	@file main.cpp
+ *	testprogram, https://github.com/voibit/gandur/examples/main.cpp
+ *	@brief Program to test the gandur class
+ *	@author Jan-Kristian Mathisen
+ *	@author Joachim Lowzow
+ */
 #include "gandur.hpp"
 #include <chrono>
 
@@ -118,8 +125,7 @@ int main(int argn, char** argv) {
     #endif
 
 	VideoCapture cap ( file );
-    if( ! cap.isOpened () )  
-    {
+    if( ! cap.isOpened () )  {
         cout << "Could not load av-file: " << file << endl;
         return -1;
     }
@@ -173,8 +179,8 @@ int main(int argn, char** argv) {
 	    else {
             cout << "End of file.. exiting.." << endl;
             break; ///> Breaks the while loop when no more frames to process.
-	    }
+        }
 
     } //end detection loop
-	return 0;
+    return 0;
 }

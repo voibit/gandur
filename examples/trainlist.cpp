@@ -1,3 +1,10 @@
+/**
+ *	@file trainlist.cpp
+ *	trainlist, https://github.com/voibit/gandur/examples/validate.cpp
+ *	@brief Program split datasaet and make lists for Darknet
+ *	@author Jan-Kristian Mathisen
+ *	@author Joachim Lowzow
+ */
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <boost/crc.hpp>
@@ -55,8 +62,8 @@ void writeList(const path &p, const vector<string> &list) {
 
 	ofstream file(p);
 	for (string p : list) {
-		file << p << std::endl; 
-	} 
+		file << p << std::endl;
+	}
 	file.close();
 }
 /**
@@ -94,7 +101,7 @@ int main(int argc, char **argv) {
 	if (argc>1) dirsfile=argv[1];
 	if (argc>2) trainlist=argv[2];
 	if (argc>3) validlist=argv[3];
-    if (argc > 4) prob = (float) atof(argv[4]);
+	if (argc > 4) prob = (float) atof(argv[4]);
 
 	//read trainlist
 	if (!exists(dirsfile)) {
@@ -113,7 +120,7 @@ int main(int argc, char **argv) {
 		if (is_directory(line)) dirs.push_back(line);
 		else cout <<"Dir "<<line<< " does not exist.."<<endl;
 	}
-	file.close(); 
+	file.close();
 
 	if (dirs.size()==0) {
 		cout <<"no dirs in dirfile.. "<<endl;
@@ -127,7 +134,7 @@ int main(int argc, char **argv) {
 	 * Add to list vector
 	 */
 	for (string dir: dirs) {
-        for (auto &entry : directory_iterator(dir)) {
+		for (auto &entry : directory_iterator(dir)) {
 			if(checkFile(entry.path()) ) {
 				string imgpath = canonical(entry).string();
 
@@ -139,8 +146,8 @@ int main(int argc, char **argv) {
 		}
 	}
 	///> Write vector list to train and valid file.
-	writeList(trainlist, train); 
-	writeList(validlist, valid); 
+	writeList(trainlist, train);
+	writeList(validlist, valid);
 
 	///> Display some nice info. 
 	cout << "Wrote "<< train.size() <<" training images, ";
