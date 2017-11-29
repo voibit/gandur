@@ -1,6 +1,6 @@
 /**
  *	@file imgdet.cpp
- *	Crop, https://github.com/voibit/gandur/examples/imgdet.cpp
+ *	imgdet, https://github.com/voibit/gandur/examples/imgdet.cpp
  *	@brief program to label dataset
  *	@author Jan-Kristian Mathisen
  *	@author Joachim Lowzow
