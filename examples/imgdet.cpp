@@ -57,39 +57,7 @@ void loopImgs(size_t start = 0);
 
 
 int main(int argc, char**argv){
-<<<<<<< HEAD
-	workPath = argc>1 ? argv[1] : ".";
-	savePath = argc>2 ? argv[2] : workPath/"ok";
 
-    if (argc>3) doresize = true;
-	int start = argc > 3 ? atoi(argv[3]) + 1 : 0;
-	std::cout << start << std::endl; 
-
-	if (!is_directory(workPath)) {
-		std::cout <<"Error: "<<workPath<< " is not a directory. "<< std::endl;
-		return -1;  
-	}
-	workPath=canonical(workPath);
-
-	net = new Gandur();
-
-
-	imgs = getImgs(workPath); 
-	count = imgs.size();
-	if (count == 0) {
-		std::cout <<"Error: "<<workPath<<" contains no images. "<< std::endl;
-		return -1;
-	}
-	if (!is_directory(savePath)) create_directory(savePath);
-
-	savePath=canonical(savePath);
-
-	classes = net->getClasses();
-
-	loopImgs(start);
-	return 0; 
-}
-=======
     //TODO: cleaner argumets
     ///> Fill paths form terminal arguments
     workPath = argc > 1 ? argv[1] : ".";
@@ -110,8 +78,7 @@ int main(int argc, char**argv){
     net = new Gandur();         ///> initiate network
     imgs = getImgs(workPath);   ///> get all paths
     count = imgs.size();
->>>>>>> refs/remotes/origin/new
-
+    
     if (count == 0) {
         std::cout << "Error: " << workPath << " contains no images. " << std::endl;
         return -1;
@@ -124,6 +91,7 @@ int main(int argc, char**argv){
     loopImgs(start);                ///> Happy labeling! :)
     return 0;
 }
+
 
 /**
  * Detection loop. Name a window and show.
@@ -359,21 +327,12 @@ bool label() {
      * Keyboard numbers stars on 48 in the  ascii table
      * Handle that.
      */
-<<<<<<< HEAD
-
-	if (k > 47 && k < 48 + classes.size()) {
-		int id = k - 48;
-
-		message = classes[id];
-		draw();
-=======
     if (k > 47 && k < 48 + classes.size()) {
         int id = k - 48;
 
         message = classes[id];
         draw();
 
->>>>>>> refs/remotes/origin/new
         ///> Use the mouse to draw box around objects.
         Rect box = selectROI("Gandur", img);
 
@@ -457,8 +416,10 @@ void save() {
         compression_params.push_back(IMWRITE_JPEG_QUALITY);
         compression_params.push_back(100);
         Mat orig=imread((workPath / imgName).string());
-        imwrite((savePath/imgName).string(),doresize?resized(orig, 608):orig, compression_params);
-        copy_file(workPath / imgName, savePath / imgName, copy_option::overwrite_if_exists);
+        imwrite((savePath/imgName).string(),
+        	doresize?resized(orig, 608):orig, compression_params);
+        copy_file(workPath / imgName, savePath / imgName,
+        	copy_option::overwrite_if_exists);
     }
     saveTxt(savePath / txtName);
     message = "labels saved.. ";
