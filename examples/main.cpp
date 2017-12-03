@@ -125,7 +125,7 @@ void drawBar(Mat &img) {
 void drawOnBar(Mat &img, const Detection &det) {
 
     Point pos(det.box.x+det.box.width/2,26/2);
-    Point posB(det.box.x+det.box.width/2-10,2);
+    Point posB(det.box.x+det.box.width/2-8,3);
 
     Scalar color;
     Scalar color2;
@@ -140,8 +140,10 @@ void drawOnBar(Mat &img, const Detection &det) {
             color2 = CV_RGB(255,255,255);
             break;
         case 2:
-            color = CV_RGB(255,255,255);
-            color2 = CV_RGB(50,50,50);
+
+            color = CV_RGB(50,50,50);
+            color2 = CV_RGB(255,255,255);
+            break;           
         case 6:
             color = CV_RGB(0,0,255);
             color2 = CV_RGB(50,50,50);
@@ -157,8 +159,8 @@ void drawOnBar(Mat &img, const Detection &det) {
         case 1:
         case 2:
         case 6:
-            Rect box1(posB,Point(posB.x+20,posB.y+11));
-            Rect box2(Point(posB.x,posB.y+11),Point(posB.x+20,posB.y+22));
+            Rect box1(posB,Point(posB.x+16,posB.y+10));
+            Rect box2(Point(posB.x,posB.y+10),Point(posB.x+16,posB.y+20));
             rectangle(img, box1,color, -1, 8, 0);
             rectangle(img, box2,color2, -1, 8, 0);
             break;
@@ -173,13 +175,13 @@ void drawOnBar(Mat &img, const Detection &det) {
  */
 Mat drawDetections(Mat img, std::vector<Detection> &dets, double aov) {
 
-    drawBar(img);
+    if (bearing) drawBar(img);
 
     ///> For each detection do;
     for (Detection det : dets) {
         
         drawDetection(img, det);
-        drawBearLine(img,det.box);
+        //drawBearLine(img,det.box);
         if (bearing) {
             drawBearing(img,det.box, aov);
             drawOnBar(img,det);    
@@ -201,12 +203,12 @@ int main(int argn, char** argv) {
 
     const String keys =
         "{help h ?       |       | print this message  }"
-        "{thresh         |       | detection threshold }"
+        "{thresh t       |       | detection threshold }"
         "{aov            | 60.   | angle of view diag  }"
-        "{scale          | 1     | scale input         }"
+        "{scale s        | 1     | scale input         }"
         "{wait           | 5     | ms to show frame    }"
-        "{fps            |       | show fps            }"
-        "{bearing        |       | show bearing on line}"
+        "{fps f          |       | show fps            }"
+        "{bar b          |       | show bearing on line}"
         "{@file          |       | mediafile to network}";
 
     CommandLineParser parser(argn, argv, keys);
@@ -229,7 +231,7 @@ int main(int argn, char** argv) {
     double scale = parser.get<double>("scale"); 
     int wait = parser.get<int>("wait"); 
     bool fps = parser.has("fps");
-    bearing = parser.has("bearing");
+    bearing = parser.has("bar");
 
     /**
     * Time stuff
