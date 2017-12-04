@@ -23,6 +23,7 @@ size_t current = 0; ///> Current image that is beeing labeld
 
 bool doresize = true;///> Resize to fit network before save
 bool vresize = false;///> Resize window when labeling
+int resizeS;
 
 Gandur *net = nullptr;
 path imgName;        ///> Path to current image
@@ -58,14 +59,30 @@ void loopImgs(size_t start = 0);
 
 int main(int argc, char**argv){
 
+    const String keys =
+    "{help h ?       |        | print this message  }"
+    "{@workPath      | .      | label path          }"
+    "{@savePath      | ./ok   | path save labels in }"
+    "{start          | 0      | start from image num }"
+    "{resize         |        | resize save images to fit network size}"
+    "{resize-size rs | 608    | size to resize to}";
+
+    CommandLineParser parser(argc, argv, keys);
+    parser.about("Imgdet, darknet image labler v1.0.0");
+    if (parser.has("help")) {
+        parser.printMessage();
+        return 0;
+    }
+
     //TODO: cleaner argumets
     ///> Fill paths form terminal arguments
-    workPath = argc > 1 ? argv[1] : ".";
-    savePath = argc > 2 ? argv[2] : workPath / "ok";
+    workPath = parser.get<string>("@workPath");
+    savePath = parser.get<string>("@workPath");
     ///> Start from different image number if 3rd argument
-    int start = argc > 3 ? atoi(argv[3]) + 1 : 0;
+    int start = parser.get<int>("start");
     ///> Resize if more than 2 arguments.
-    if (argc > 4) doresize = true;
+    doresize = parser.has("resize");
+    resizeS = parser.get<int>("resize-size");
 
     ///> Basic error handling
     if (!is_directory(workPath)) {
@@ -402,7 +419,7 @@ void save() {
         compression_params.push_back(100);
         Mat orig=imread((workPath / imgName).string());
         imwrite((savePath/imgName).string(),
-        	doresize?resized(orig, 608):orig, compression_params);
+        	doresize?resized(orig, resizeS):orig, compression_params);
         copy_file(workPath / imgName, savePath / imgName,
         	copy_option::overwrite_if_exists);
     }

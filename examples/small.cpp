@@ -142,14 +142,28 @@ Rect ptoi(const Mat &img, const Rect2f &box) {
 }
 
 int main(int argc, char**argv){
-	path p(argc>1? argv[1] : ".");
 
+
+    const String keys =
+    "{help h ?       |        | print this message  }"
+    "{@readPath      | .      | Path to images      }"
+    "{@savePath      | ./small| path save images in }"
+    "{area a         | .001   | max area of small objects}";
+
+    CommandLineParser parser(argc, argv, keys);
+    parser.about("Gandur small obj extractor v1.0.0");
+    if (parser.has("help")) {
+        parser.printMessage();
+        return 0;
+    }
 	if (argc < 3) {
-		std::cout << "small [readpath] [savepath] [thresh]\n";
+		parser.printMessage();
 		return -1;
 	}
-	path savepath=argv[2];
-	double thresh = atof(argv[3]);
+	path p = parser.get<string>("@readPath");
+	path savepath=parser.get<string>("@savePath");
+	double thresh = parser.get<double>("area");
+
 	srand(time(NULL));
 	size_t nr=0;
 

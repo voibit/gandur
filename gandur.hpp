@@ -123,10 +123,12 @@ public:
     void setThresh(const float &f);     ///< Sets new threshold @param f threshold
     void setTreeThresh(const float &f); ///< Sets new tree threshold @param f threshold
     void loadWeights(path p); ///< Load new weights to network @param p path to weights file
-
     vector<Detection> detections;       ///< Vector filled after detect()
-    
     bool loadVars();      ///< Initilizes darknet detection variables,
+
+    //Some load functions for extra flexibility
+    bool loadCfg(path p);           ///< Load config @param p path to config file.
+    bool loadCfg() { loadCfg(""); } ///< Load default config
 
 protected:
     Cfg cfg;              ///< Config file
@@ -143,9 +145,7 @@ protected:
     list *options;        ///<[] Options read from config file.
 
 
-    //Some load functions for extra flexibility
-    bool loadCfg(path p);           ///< Load config @param p path to config file.
-    bool loadCfg() { loadCfg(""); } ///< Load default config
+    
 
 
     unsigned int nboxes;  ///< Total number of detection boxes in last layer.

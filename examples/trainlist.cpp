@@ -6,6 +6,7 @@
  *	@author Joachim Lowzow
  */
 #include <iostream>
+#include <opencv2/opencv.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/crc.hpp>
 #include <cmath>
@@ -88,14 +89,32 @@ void countP(path p, vector<int> &countC) {
 
 int main(int argc, char **argv) {
 
+	const string keys =
+    "{help h ?     |                | print this message  }"
+    "{@dirFile     | ./traindirs.txt| Path dataset directories}"
+    "{@trainFile   | ./trainlist.txt| where to save trainfile}"
+    "{@validFile   | ./validlist.txt| where to save validfile}"
+    "{prob         | 9              | \% of dataset to validlist}";
+
+    cv::CommandLineParser parser(argc, argv, keys);
+    parser.about("Trainlist.  v1.0.0");
+    if (parser.has("help")) {
+        parser.printMessage();
+        return 0;
+    }
+	if (argc < 3) {
+		parser.printMessage();
+		return -1;
+	}
+
 	vector<string> train;
 	vector<string> valid;
 
-	path dirsfile="./data/traindirs.txt";
-	path trainlist="../darknet/trainlist.txt";
-	path validlist="../darknet/validlist.txt";
-	float prob = 0.09; 			///> How much of the set to be valid
-	vector<int> countC(10, 0); 	///> Count for the different classes
+	path dirsfile=parser.get<string>("@dirFile");
+	path trainlist=parser.get<string>("@trainFile");
+	path validlist=parser.get<string>("@validFile");
+	double prob = parser.get<double>("prob") /100.;///> How much of the set to be valid
+	vector<int> countC(10, 0); 			   ///> Count for the different classes
 
 	///> Parse terminal arguments
 	if (argc>1) dirsfile=argv[1];

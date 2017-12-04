@@ -8,6 +8,9 @@
 //TODO: Add multi threading and multi gpu iot speed up.
 #include "gandur.hpp"
 
+
+using std::string;
+using std::cout;
 /**
  * Extends Gandur to add functionality which is not needed
  * for detection
@@ -18,10 +21,32 @@ public:
 };
 
 int main(int argc, char **argv) {
-    path p(argc > 1 ? argv[1] : ".");
-    path validlist(argc > 2 ? argv[2] : "");
+
+    const string keys =
+    "{help h ?       |        | print this message  }"
+    "{@workPath      | .      | Path to weights dir or single weight}"
+    "{@validList     |        | path to validationlist. Default: read from config file }"
+    "{@configFile    | ./gandur.conf | path to configfile}";
+
+    cv::CommandLineParser parser(argc, argv, keys);
+    parser.about("Validate tool for yolov2 weights v1.0.0");
+    if (parser.has("help")) {
+        parser.printMessage();
+        return 0;
+    }
+    path p = parser.get<string>("@workPath");
+    path validlist =parser.get<string>("@validList");
 
     auto *net = new Valid();
+
+    path conf=parser.get<string>("config");
+    if (!exists(conf) && validlist=="") {
+        cout << "Conf file does not exist and no validfile given..\n";
+        return -1;
+    } 
+    else {
+        net->loadCfg(conf);
+    }
     net->validate(p, validlist);
     return 0;
 }

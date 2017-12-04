@@ -208,11 +208,11 @@ int main(int argn, char** argv) {
         "{scale s        | 1     | scale input         }"
         "{wait           | 5     | ms to show frame    }"
         "{fps f          |       | show fps            }"
-        "{bar b          |       | show bearing on line}"
-        "{@file          |       | mediafile to network}";
+        "{bar b          |       | show bearing bar    }"
+        "{@file          |       | mediafile or stream }";
 
     CommandLineParser parser(argn, argv, keys);
-    parser.about("Gandur test v1.0.0");
+    parser.about("Gandur testprogram v1.0.0");
 
     if (parser.has("help")) {
         parser.printMessage();

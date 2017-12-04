@@ -9,6 +9,7 @@
 
 //#include "gandur.hpp"
 #include <iostream>
+#include <string>
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include <boost/filesystem.hpp>
@@ -17,6 +18,7 @@ using namespace cv;
 using namespace boost::filesystem;
 using std::cout;
 using std::endl;
+using std::string;
 
 int seeker = 0;
 bool seek = false;      ///> Used to seek video
@@ -33,9 +35,25 @@ static void setSeek(int, void* )
 
 int main(int argc, char** argv) {
 
-    ///> Get mediafile from commandline argument
-    path p(argc > 1 ? argv[1] : "mediafile.mp4");
+    const string keys =
+    "{help h ?       |       | print this message  }"
+    "{@file          |       | path to mediafile or stream }";
 
+    CommandLineParser parser(argc, argv, keys);
+    parser.about("Videt. Video frame dumper v1.0.0");
+
+    if (parser.has("help")) {
+        parser.printMessage();
+        return 0;
+    }
+
+    ///> Get mediafile from commandline argument
+    path p = parser.get<string>("@file");
+
+    if (p=="") {
+        cout << "videt requires mediafile, no given.. \n";
+        return -1;
+    }
     path filename = p.filename();   ///> Use onlu filename,
     p = canonical(p).parent_path(); ///> Get full path of file.
 
@@ -51,7 +69,7 @@ int main(int argc, char** argv) {
     ///> Open video file or stream
     VideoCapture cap((p / filename).string());
     int n=0;
-    if (!cap.isOpened()   ///> Something went wrong
+    if (!cap.isOpened())   ///> Something went wrong
     {
         std::cout << "Could not open file: " << p << std::endl;
         return -1;
