@@ -30,6 +30,7 @@ add_executable(imgdet examples/imgdet.cpp gandur.cpp)
 add_executable(small examples/small.cpp)
 add_executable(trainlist examples/trainlist.cpp)
 add_executable(valid examples/validate.cpp gandur.cpp)
+add_executable(cropper examples/crop.cpp)
 
 add_library(gandr SHARED gandur.cpp)
 
@@ -40,3 +41,4 @@ target_link_libraries(trainlist ${CVB})
 target_link_libraries(small ${CVB})
 target_link_libraries(valid ${ALL})
 target_link_libraries(gandr ${ALL})
+target_link_libraries(cropper ${CVB})
