@@ -134,7 +134,7 @@ void makeRect(int x,int y, Mat &image){
 	if(y < (nety/2)) y = (nety/2);
 
 	Rect r = Rect(	min(x - (netx/2), currentImage.cols - (netx)),
-			:min(y - (nety/2), currentImage.rows - (nety)),  netx, nety);
+			min(y - (nety/2), currentImage.rows - (nety)),  netx, nety);
 	rectangle(image, r, 1, 8, 0);
 }
 /**
@@ -182,10 +182,39 @@ vector<path> getImgs(path p) {
 	return tmp;
 }
  
-int main (int argc, char **argv)
+int main (int argn, char **argv)
 {
-	workPath = argc>1 ? argv[1] : ".";
-	savePath = argc>2 ? argv[2] : workPath/"crops";
+
+	 const String keys =
+        "{help h ?     	|       | print this message  }"
+        "{@workPath     | .		| Directory to work in}"
+        "{@savePath    	|		| Directory to save crops}"
+        "{x				| 608 	| xSize of crop}"
+        "{y				| 608 	| ySize of crop}";
+
+    CommandLineParser parser(argn, argv, keys);
+	parser.about("Cropper v0.2");
+	
+	if (parser.has("help")) {
+		parser.printMessage();
+        return 0;
+    }
+
+	if (parser.has("workPath")){
+		workPath = parser.get<string>("workPath");
+		savePath = workPath/"crops";
+	}
+
+	if (parser.has("x")){
+		netx = parser.get<int>("x");
+	}
+	if (parser.has("y")){
+		nety = parser.get<int>("y");
+	}
+
+	if (parser.has("savePath")){
+		savePath = parser.get<string>("savePath");
+	}
 
 	if (!is_directory(workPath)) {
 		std::cout <<"Error: "<<workPath<< " is not a directory. "<< std::endl;
