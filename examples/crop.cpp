@@ -187,10 +187,10 @@ int main (int argn, char **argv)
 
 	 const String keys =
         "{help h ?     	|       | print this message  }"
-        "{@workPath     | .		| Directory to work in}"
+        "{@workPath     | .     | Directory to work in}"
         "{@savePath    	|		| Directory to save crops}"
-        "{x				| 608 	| xSize of crop}"
-        "{y				| 608 	| ySize of crop}";
+        "{width x		| 608   | xSize of crop}"
+        "{height y		| 608   | ySize of crop}";
 
     CommandLineParser parser(argn, argv, keys);
 	parser.about("Cropper v0.2");
@@ -200,20 +200,14 @@ int main (int argn, char **argv)
         return 0;
     }
 
-	if (parser.has("workPath")){
-		workPath = parser.get<string>("workPath");
-		savePath = workPath/"crops";
-	}
+	workPath = parser.get<string>("@workPath");
+	savePath = workPath/"crops";
 
-	if (parser.has("x")){
-		netx = parser.get<int>("x");
-	}
-	if (parser.has("y")){
-		nety = parser.get<int>("y");
-	}
+	netx = parser.get<int>("width");
+	nety = parser.get<int>("height");
 
-	if (parser.has("savePath")){
-		savePath = parser.get<string>("savePath");
+	if (parser.has("@savePath")){
+		savePath = parser.get<string>("@savePath");
 	}
 
 	if (!is_directory(workPath)) {
@@ -229,7 +223,8 @@ int main (int argn, char **argv)
 	
 	if (cnt == 0) {
 		std::cout <<"Error: "<<workPath<<" contains no images. "<< std::endl;
-}
+		return -1;
+	}
 	std::cout << "Loaded: " << cnt << " images" << std::endl;
 
 	currentImage = imread(imgs[current].string());
