@@ -1,5 +1,6 @@
-
 # Gandur
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fvoibit%2Fgandur.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fvoibit%2Fgandur?ref=badge_shield)
+
 
 C++ wrapper class for darknet.
 based upon prabindhs "arapaho" [https://github.com/prabindh/darknet].
@@ -63,3 +64,7 @@ Key | boxmode | grabmode
 a | add boxes. | 
 c | finish adding boxes | clear boxes
 space | select box | save image
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fvoibit%2Fgandur.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fvoibit%2Fgandur?ref=badge_large)
